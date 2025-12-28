@@ -71,6 +71,7 @@ export function createTwitchChat({ onMessage, onStatus }) {
       onMessage?.({
         channel: currentChannel,
         user: tags?.['display-name'] || tags?.username || 'unknown',
+        userColor: tags?.color || '',
         message: msgText,
         segments,
         isBroadcaster: tags?.badges?.broadcaster === '1',

@@ -63,6 +63,21 @@ export function InterfacePage() {
   showWrap.append(showInput, showText);
   showRow.append(showLabel, showWrap);
 
+  const colorsRow = document.createElement('div');
+  colorsRow.className = 'ifaceForm__row';
+  const colorsLabel = document.createElement('div');
+  colorsLabel.className = 'urlLabel';
+  colorsLabel.textContent = 'Couleurs';
+  const colorsWrap = document.createElement('label');
+  colorsWrap.className = 'checkRow';
+  const colorsInput = document.createElement('input');
+  colorsInput.type = 'checkbox';
+  colorsInput.checked = true;
+  const colorsText = document.createElement('span');
+  colorsText.textContent = 'Utiliser les couleurs Twitch des pseudos';
+  colorsWrap.append(colorsInput, colorsText);
+  colorsRow.append(colorsLabel, colorsWrap);
+
   const addBtn = document.createElement('button');
   addBtn.className = 'btn';
   addBtn.type = 'button';
@@ -96,12 +111,13 @@ export function InterfacePage() {
     }
   }
 
-  function buildUrl(baseUrl, { fontSize, limit, showStreamer }) {
+  function buildUrl(baseUrl, { fontSize, limit, showStreamer, userColors }) {
     const u = new URL(baseUrl);
     u.searchParams.set('overlay', '1');
     if (fontSize) u.searchParams.set('fontSize', String(fontSize));
     if (limit) u.searchParams.set('limit', String(limit));
     u.searchParams.set('showStreamer', showStreamer ? '1' : '0');
+    u.searchParams.set('userColors', userColors ? '1' : '0');
     u.hash = '#/';
     return u.toString();
   }
@@ -182,6 +198,7 @@ export function InterfacePage() {
       const fontSize = Number(fontInput.value) || null;
       const limit = Number(limitInput.value) || null;
       const showStreamer = !!showInput.checked;
+      const userColors = !!colorsInput.checked;
 
       const item = {
         id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
@@ -189,6 +206,7 @@ export function InterfacePage() {
         fontSize: fontSize && fontSize >= 8 && fontSize <= 72 ? Math.floor(fontSize) : null,
         limit: limit && limit >= 1 && limit <= 500 ? Math.floor(limit) : null,
         showStreamer,
+        userColors,
       };
 
       const next = [item, ...getStore()];
@@ -200,7 +218,7 @@ export function InterfacePage() {
     });
   }
 
-  form.append(nameRow, fontRow, limitRow, showRow, addBtn);
+  form.append(nameRow, fontRow, limitRow, showRow, colorsRow, addBtn);
   init().catch(() => {});
 
   wrap.append(h2, p, form, list);

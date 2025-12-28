@@ -43,6 +43,41 @@ body {
   overflow: hidden; /* only the page content should scroll */
 }
 
+/* Scrollbar styling (Chromium/Electron + Firefox) */
+.appMain,
+.chatLog {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(229, 229, 228, 0.35) rgba(20, 20, 20, 0.35);
+}
+
+.appMain::-webkit-scrollbar,
+.chatLog::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.appMain::-webkit-scrollbar-track,
+.chatLog::-webkit-scrollbar-track {
+  background: rgba(20, 20, 20, 0.35);
+}
+
+.appMain::-webkit-scrollbar-thumb,
+.chatLog::-webkit-scrollbar-thumb {
+  background: rgba(229, 229, 228, 0.28);
+  border-radius: 999px;
+  border: 2px solid rgba(20, 20, 20, 0.35);
+}
+
+.appMain::-webkit-scrollbar-thumb:hover,
+.chatLog::-webkit-scrollbar-thumb:hover {
+  background: rgba(229, 229, 228, 0.42);
+}
+
+.appMain::-webkit-scrollbar-corner,
+.chatLog::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 #app {
   height: 100%;
 }
@@ -289,9 +324,23 @@ body.isOverlay.isTransparent {
   font-size: var(--chat-font-size, 14px);
 }
 
+/* OBS/custom HTTP interface: no frame, no background, full height */
+body.isOverlay .chatLog {
+  margin-top: 0;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+body.isOverlay .chatMsg {
+  padding: 0.15em 0;
+}
+
 body.isOverlay.isCompact .chatLog {
-  height: 220px;
-  padding: 10px;
+  height: 100%;
+  padding: 0;
 }
 
 body.isOverlay.isCompact .chatMsg {
@@ -370,7 +419,7 @@ body.isOverlay.isTransparent .chatLog {
 }
 
 .chatMsg__user {
-  color: var(--title);
+  color: var(--user-color, var(--title));
   font-weight: 800;
   flex: 0 0 auto;
 }

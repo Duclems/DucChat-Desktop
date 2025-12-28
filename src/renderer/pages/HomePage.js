@@ -2,6 +2,32 @@ export function HomePage() {
   const wrap = document.createElement('div');
   wrap.className = 'card';
 
+  const isOverlay = document.body.classList.contains('isOverlay');
+  const userColorCache = new Map();
+
+  function hashString(str) {
+    // Fast deterministic hash (FNV-1a)
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+
+  function fallbackUserColor(user) {
+    const key = String(user || '').toLowerCase();
+    if (!key) return 'hsl(210 85% 70%)';
+    const cached = userColorCache.get(key);
+    if (cached) return cached;
+
+    const hue = hashString(key) % 360;
+    // Bright & readable on dark background
+    const color = `hsl(${hue} 85% 70%)`;
+    userColorCache.set(key, color);
+    return color;
+  }
+
   const h2 = document.createElement('h2');
   h2.textContent = 'Chat Twitch';
 
@@ -19,7 +45,8 @@ export function HomePage() {
     const cfg = window.__ducchatInterface || {};
     const limit = Number.isFinite(cfg.limit) ? cfg.limit : MAX_DEFAULT;
     const showStreamer = cfg.showStreamer !== false;
-    return { limit, showStreamer };
+    const userColors = cfg.userColors !== false;
+    return { limit, showStreamer, userColors };
   }
 
   function renderMessage(m) {
@@ -28,7 +55,12 @@ export function HomePage() {
 
     const user = document.createElement('span');
     user.className = 'chatMsg__user';
-    user.textContent = m.user;
+    user.textContent = `${m.user}:`;
+    const { userColors } = getInterfaceConfig();
+    if (userColors) {
+      const c = String(m.userColor || '').trim();
+      row.style.setProperty('--user-color', c || fallbackUserColor(m.user));
+    }
 
     const content = document.createElement('span');
     content.className = 'chatMsg__text';
@@ -130,7 +162,9 @@ export function HomePage() {
 
   init().catch(() => {});
 
-  wrap.append(h2, meta, log);
+  // For custom HTTP interfaces (overlay), render ONLY the chat messages.
+  if (!isOverlay) wrap.append(h2, meta);
+  wrap.append(log);
   return wrap;
 }
 

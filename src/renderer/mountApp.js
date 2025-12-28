@@ -15,6 +15,7 @@ export function mountApp() {
   const fontSizeParam = Number(params.get('fontSize'));
   const limitParam = Number(params.get('limit'));
   const showStreamerParam = params.get('showStreamer');
+  const userColorsParam = params.get('userColors');
 
   document.body.classList.toggle('isOverlay', isOverlay);
   document.body.classList.toggle('isTransparent', isTransparent);
@@ -23,13 +24,14 @@ export function mountApp() {
   const fontSize = Number.isFinite(fontSizeParam) && fontSizeParam >= 8 && fontSizeParam <= 72 ? fontSizeParam : null;
   const limit = Number.isFinite(limitParam) && limitParam >= 1 && limitParam <= 500 ? Math.floor(limitParam) : null;
   const showStreamer = showStreamerParam === null ? true : showStreamerParam === '1' || showStreamerParam === 'true';
+  const userColors = userColorsParam === null ? true : userColorsParam === '1' || userColorsParam === 'true';
 
   if (fontSize) {
     document.documentElement.style.setProperty('--chat-font-size', `${fontSize}px`);
   }
 
   // Expose a tiny runtime config for pages (optional)
-  window.__ducchatInterface = { fontSize, limit, showStreamer };
+  window.__ducchatInterface = { fontSize, limit, showStreamer, userColors };
 
   const outlet = document.createElement('div');
 
