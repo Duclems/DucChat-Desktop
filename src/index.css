@@ -411,27 +411,40 @@ body.isOverlay.isTransparent .chatLog {
   align-items: center;
 }
 
+.styleGrid {
+  margin-top: var(--space-13);
+  display: grid;
+  gap: var(--space-13);
+}
+
+.styleRow {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: var(--space-13);
+  align-items: center;
+}
+
 .chatMsg {
   display: flex;
-  gap: 0.6em;
-  line-height: 1.45;
-  padding: 0.2em 0;
+  gap: var(--chat-gap, 0.6em);
+  line-height: var(--chat-line-height, 1.45);
+  padding: var(--chat-padding-y, 0.2em) 0;
 }
 
 .chatMsg__user {
   color: var(--user-color, var(--title));
-  font-weight: 800;
+  font-weight: var(--chat-user-weight, 800);
   flex: 0 0 auto;
 }
 
 .chatMsg__text {
-  color: var(--text);
+  color: var(--chat-text-color, var(--text));
   min-width: 0;
   word-break: break-word;
 }
 
 .chatEmote {
-  height: 22px;
+  height: var(--chat-emote-size, 22px);
   width: auto;
   vertical-align: middle;
   margin: 0 0.1em;
@@ -450,7 +463,7 @@ body.isOverlay.isTransparent .chatLog {
   max-width: var(--content-max);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: var(--space-13);
   width: 100%;
 }

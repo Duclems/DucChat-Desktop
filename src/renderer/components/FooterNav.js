@@ -15,12 +15,14 @@ export function FooterNav({ router }) {
 
   const home = makeLink({ label: 'Accueil', href: '#/' });
   const iface = makeLink({ label: 'Interface', href: '#/interface' });
+  const style = makeLink({ label: 'Style', href: '#/style' });
   const settings = makeLink({ label: 'Settings', href: '#/settings' });
 
   function updateActive() {
     const current = router.getPath();
     home.classList.toggle('navLink--active', current === '/');
     iface.classList.toggle('navLink--active', current === '/interface');
+    style.classList.toggle('navLink--active', current === '/style');
     settings.classList.toggle('navLink--active', current === '/settings');
   }
 
@@ -28,7 +30,7 @@ export function FooterNav({ router }) {
   updateActive();
 
   // Order: left -> right
-  inner.append(home, iface, settings);
+  inner.append(home, iface, style, settings);
   footer.append(inner);
   return footer;
 }
