@@ -20,6 +20,8 @@ export function mountApp() {
   const stackedParam = params.get('stacked');
   const msgPadParam = Number(params.get('msgPad'));
   const msgTimeoutParam = Number(params.get('msgTimeout'));
+  const frameRedParam = params.get('frameRed');
+  const frameBgColorParam = params.get('frameBgColor');
 
   document.body.classList.toggle('isOverlay', isOverlay);
   document.body.classList.toggle('isCompact', isCompact);
@@ -37,6 +39,8 @@ export function mountApp() {
     Number.isFinite(msgPadParam) && msgPadParam >= 0 && msgPadParam <= 1 ? msgPadParam : null;
   const msgTimeout =
     Number.isFinite(msgTimeoutParam) && msgTimeoutParam >= 0 && msgTimeoutParam <= 300 ? msgTimeoutParam : null;
+  const frameRed = frameRedParam === '1' || frameRedParam === 'true';
+  const frameBgColor = frameBgColorParam && /^#[0-9A-Fa-f]{6}$/.test(frameBgColorParam) ? frameBgColorParam : null;
 
   if (fontSize) {
     document.documentElement.style.setProperty('--chat-font-size', `${fontSize}px`);
@@ -47,9 +51,15 @@ export function mountApp() {
   if (msgPad !== null) {
     document.documentElement.style.setProperty('--msg-pad', `${msgPad}em`);
   }
+  if (frameRed) {
+    document.body.classList.add('hasFrameRed');
+    if (frameBgColor) {
+      document.documentElement.style.setProperty('--frame-bg-color', frameBgColor);
+    }
+  }
 
   // Expose a tiny runtime config for pages (optional)
-  window.__ducchatInterface = { fontSize, limit, showStreamer, userColors, emoteRadius, stacked, msgPad, msgTimeout };
+  window.__ducchatInterface = { fontSize, limit, showStreamer, userColors, emoteRadius, stacked, msgPad, msgTimeout, frameRed, frameBgColor };
 
   const outlet = document.createElement('div');
 

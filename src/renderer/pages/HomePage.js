@@ -184,6 +184,8 @@ export function HomePage() {
     if (cfg.stacked) u.searchParams.set('stacked', '1');
     if (typeof cfg.msgPad === 'number') u.searchParams.set('msgPad', String(cfg.msgPad));
     if (typeof cfg.msgTimeout === 'number' && cfg.msgTimeout > 0) u.searchParams.set('msgTimeout', String(cfg.msgTimeout));
+    if (cfg.frameRed) u.searchParams.set('frameRed', '1');
+    if (cfg.frameBgColor) u.searchParams.set('frameBgColor', cfg.frameBgColor);
     u.hash = '#/';
     return u.toString();
   }
@@ -429,6 +431,14 @@ export function HomePage() {
       return { label, input };
     };
 
+    const colorInput = (defaultValue) => {
+      const i = document.createElement('input');
+      i.className = 'textInput';
+      i.type = 'color';
+      i.value = defaultValue || '#000000';
+      return i;
+    };
+
     const font = numInput('18', 8, 72);
     const limit = numInput('100', 1, 500);
     const msgPad = numInput('0.20', 0, 1);
@@ -439,6 +449,8 @@ export function HomePage() {
     const userColors = check('Couleurs Twitch (fallback si vide)');
     const roundEmotes = check('Arrondir les emotes');
     const stacked = check('Message sous le pseudo');
+    const frameRed = check('Cadre rouge');
+    const frameBgColor = colorInput('#000000');
 
     userColors.input.checked = true;
 
@@ -452,6 +464,8 @@ export function HomePage() {
       if (typeof saved.userColors === 'boolean') userColors.input.checked = saved.userColors;
       if (typeof saved.roundEmotes === 'boolean') roundEmotes.input.checked = saved.roundEmotes;
       if (typeof saved.stacked === 'boolean') stacked.input.checked = saved.stacked;
+      if (typeof saved.frameRed === 'boolean') frameRed.input.checked = saved.frameRed;
+      if (typeof saved.frameBgColor === 'string') frameBgColor.value = saved.frameBgColor;
     }
 
     const urlRow = document.createElement('div');
@@ -566,6 +580,8 @@ export function HomePage() {
         userColors: !!userColors.input.checked,
         compact: true, // Always compact by default
         stacked: !!stacked.input.checked,
+        frameRed: !!frameRed.input.checked,
+        frameBgColor: frameBgColor.value || '#000000',
       };
 
       // Apply preview + hook runtime config
@@ -591,6 +607,15 @@ export function HomePage() {
         fontSize: cfg.fontSize && cfg.fontSize >= 8 && cfg.fontSize <= 72 ? Math.floor(cfg.fontSize) : null,
       });
 
+      // Apply frame red style
+      if (cfg.frameRed) {
+        document.body.classList.add('hasFrameRed');
+        document.documentElement.style.setProperty('--frame-bg-color', cfg.frameBgColor);
+      } else {
+        document.body.classList.remove('hasFrameRed');
+        document.documentElement.style.removeProperty('--frame-bg-color');
+      }
+
       savePreviewStyle({
         fontSize: cfg.fontSize ? Math.floor(cfg.fontSize) : null,
         limit: cfg.limit ? Math.floor(cfg.limit) : null,
@@ -600,6 +625,8 @@ export function HomePage() {
         roundEmotes: cfg.roundEmotes,
         userColors: cfg.userColors,
         stacked: cfg.stacked,
+        frameRed: cfg.frameRed,
+        frameBgColor: cfg.frameBgColor,
       });
 
       const baseUrl = await getBaseUrl();
@@ -618,6 +645,8 @@ export function HomePage() {
       userColors.input,
       roundEmotes.input,
       stacked.input,
+      frameRed.input,
+      frameBgColor,
     ];
     inputs.forEach((el) => el.addEventListener('input', () => update()));
     inputs.forEach((el) => el.addEventListener('change', () => update()));
@@ -674,8 +703,14 @@ export function HomePage() {
     checksColors.append(userColors.label);
     categoryContainers.colors.append(checksColors);
 
-    // Visual style category: (empty for now)
-    // categoryContainers.visual is empty, ready for future parameters
+    // Visual style category: Frame red
+    const checksVisual = document.createElement('div');
+    checksVisual.className = 'styleChecks';
+    checksVisual.append(frameRed.label);
+    const rowFrameBg = document.createElement('div');
+    rowFrameBg.className = 'styleGrid__row';
+    rowFrameBg.append(name('Fond'), frameBgColor, document.createElement('div'), document.createElement('div'));
+    categoryContainers.visual.append(checksVisual, rowFrameBg);
 
     // Show/hide categories based on selection
     function showCategory(categoryValue) {

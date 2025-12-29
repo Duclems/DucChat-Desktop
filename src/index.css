@@ -617,6 +617,14 @@ body.isOverlay.isCompact .chatEmote {
   transition: opacity 0.3s ease-out, transform 0.3s ease-out;
 }
 
+body.hasFrameRed .chatMsg {
+  border: 2px solid #ff0000;
+  border-radius: 4px;
+  padding: 0.3em 0.5em;
+  margin: 0.2em 0;
+  background: var(--frame-bg-color, transparent);
+}
+
 .chatMsg__user {
   color: var(--user-color, var(--title));
   font-weight: 800;
