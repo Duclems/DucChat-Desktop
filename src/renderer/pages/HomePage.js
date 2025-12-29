@@ -190,6 +190,16 @@ export function HomePage() {
       if (cfg.frameBorderWidth) u.searchParams.set('frameBorderWidth', String(cfg.frameBorderWidth));
       if (cfg.frameBorderColor) u.searchParams.set('frameBorderColor', cfg.frameBorderColor);
       if (cfg.frameBorderRadius) u.searchParams.set('frameBorderRadius', String(cfg.frameBorderRadius));
+      if (cfg.frameShadowBlur > 0) {
+        u.searchParams.set('frameShadowBlur', String(cfg.frameShadowBlur));
+        if (cfg.frameShadowColor) u.searchParams.set('frameShadowColor', cfg.frameShadowColor);
+      }
+      if (cfg.frameTextColor) u.searchParams.set('frameTextColor', cfg.frameTextColor);
+      if (cfg.frameTextBold) u.searchParams.set('frameTextBold', '1');
+      if (cfg.frameTextItalic) u.searchParams.set('frameTextItalic', '1');
+      if (cfg.frameTextUnderline) u.searchParams.set('frameTextUnderline', '1');
+      if (cfg.frameTextStrikethrough) u.searchParams.set('frameTextStrikethrough', '1');
+      if (cfg.frameTextUppercase) u.searchParams.set('frameTextUppercase', '1');
     }
     u.hash = '#/';
     return u.toString();
@@ -461,6 +471,15 @@ export function HomePage() {
     const frameBorderColor = colorInput('#ff0000');
     const frameBorderRadius = numInput('0', 0, 50);
     frameBorderRadius.step = '1';
+    const frameShadowBlur = numInput('0', 0, 50);
+    frameShadowBlur.step = '1';
+    const frameShadowColor = colorInput('#000000');
+    const frameTextColor = colorInput('#ffffff');
+    const frameTextBold = check('Gras');
+    const frameTextItalic = check('Italique');
+    const frameTextUnderline = check('Souligné');
+    const frameTextStrikethrough = check('Barré');
+    const frameTextUppercase = check('Majuscules');
 
     userColors.input.checked = true;
 
@@ -479,6 +498,14 @@ export function HomePage() {
       if (typeof saved.frameBorderWidth === 'number') frameBorderWidth.value = String(saved.frameBorderWidth);
       if (typeof saved.frameBorderColor === 'string') frameBorderColor.value = saved.frameBorderColor;
       if (typeof saved.frameBorderRadius === 'number') frameBorderRadius.value = String(saved.frameBorderRadius);
+      if (typeof saved.frameShadowBlur === 'number') frameShadowBlur.value = String(saved.frameShadowBlur);
+      if (typeof saved.frameShadowColor === 'string') frameShadowColor.value = saved.frameShadowColor;
+      if (typeof saved.frameTextColor === 'string') frameTextColor.value = saved.frameTextColor;
+      if (typeof saved.frameTextBold === 'boolean') frameTextBold.input.checked = saved.frameTextBold;
+      if (typeof saved.frameTextItalic === 'boolean') frameTextItalic.input.checked = saved.frameTextItalic;
+      if (typeof saved.frameTextUnderline === 'boolean') frameTextUnderline.input.checked = saved.frameTextUnderline;
+      if (typeof saved.frameTextStrikethrough === 'boolean') frameTextStrikethrough.input.checked = saved.frameTextStrikethrough;
+      if (typeof saved.frameTextUppercase === 'boolean') frameTextUppercase.input.checked = saved.frameTextUppercase;
     }
 
     const urlRow = document.createElement('div');
@@ -598,6 +625,14 @@ export function HomePage() {
         frameBorderWidth: Number(frameBorderWidth.value) || 2,
         frameBorderColor: frameBorderColor.value || '#ff0000',
         frameBorderRadius: Number(frameBorderRadius.value) || 0,
+        frameShadowBlur: Number(frameShadowBlur.value) || 0,
+        frameShadowColor: frameShadowColor.value || '#000000',
+        frameTextColor: frameTextColor.value || '#ffffff',
+        frameTextBold: !!frameTextBold.input.checked,
+        frameTextItalic: !!frameTextItalic.input.checked,
+        frameTextUnderline: !!frameTextUnderline.input.checked,
+        frameTextStrikethrough: !!frameTextStrikethrough.input.checked,
+        frameTextUppercase: !!frameTextUppercase.input.checked,
       };
 
       // Apply preview + hook runtime config
@@ -634,12 +669,32 @@ export function HomePage() {
         } else {
           document.documentElement.style.removeProperty('--frame-border-radius');
         }
+        if (cfg.frameShadowBlur > 0) {
+          const shadowColor = cfg.frameShadowColor || '#000000';
+          document.documentElement.style.setProperty('--frame-shadow', `inset 0 0 ${cfg.frameShadowBlur}px ${shadowColor}`);
+        } else {
+          document.documentElement.style.removeProperty('--frame-shadow');
+        }
+        document.documentElement.style.setProperty('--frame-text-color', cfg.frameTextColor);
+        document.documentElement.style.setProperty('--frame-text-weight', cfg.frameTextBold ? 'bold' : 'normal');
+        document.documentElement.style.setProperty('--frame-text-style', cfg.frameTextItalic ? 'italic' : 'normal');
+        let textDecoration = [];
+        if (cfg.frameTextUnderline) textDecoration.push('underline');
+        if (cfg.frameTextStrikethrough) textDecoration.push('line-through');
+        document.documentElement.style.setProperty('--frame-text-decoration', textDecoration.length > 0 ? textDecoration.join(' ') : 'none');
+        document.documentElement.style.setProperty('--frame-text-transform', cfg.frameTextUppercase ? 'uppercase' : 'none');
       } else {
         document.body.classList.remove('hasFrameRed');
         document.documentElement.style.removeProperty('--frame-bg-color');
         document.documentElement.style.removeProperty('--frame-border-width');
         document.documentElement.style.removeProperty('--frame-border-color');
         document.documentElement.style.removeProperty('--frame-border-radius');
+        document.documentElement.style.removeProperty('--frame-shadow');
+        document.documentElement.style.removeProperty('--frame-text-color');
+        document.documentElement.style.removeProperty('--frame-text-weight');
+        document.documentElement.style.removeProperty('--frame-text-style');
+        document.documentElement.style.removeProperty('--frame-text-decoration');
+        document.documentElement.style.removeProperty('--frame-text-transform');
       }
 
       savePreviewStyle({
@@ -656,6 +711,14 @@ export function HomePage() {
         frameBorderWidth: cfg.frameBorderWidth,
         frameBorderColor: cfg.frameBorderColor,
         frameBorderRadius: cfg.frameBorderRadius,
+        frameShadowBlur: cfg.frameShadowBlur,
+        frameShadowColor: cfg.frameShadowColor,
+        frameTextColor: cfg.frameTextColor,
+        frameTextBold: cfg.frameTextBold,
+        frameTextItalic: cfg.frameTextItalic,
+        frameTextUnderline: cfg.frameTextUnderline,
+        frameTextStrikethrough: cfg.frameTextStrikethrough,
+        frameTextUppercase: cfg.frameTextUppercase,
       });
 
       const baseUrl = await getBaseUrl();
@@ -679,6 +742,14 @@ export function HomePage() {
       frameBorderWidth,
       frameBorderColor,
       frameBorderRadius,
+      frameShadowBlur,
+      frameShadowColor,
+      frameTextColor,
+      frameTextBold.input,
+      frameTextItalic.input,
+      frameTextUnderline.input,
+      frameTextStrikethrough.input,
+      frameTextUppercase.input,
     ];
     inputs.forEach((el) => el.addEventListener('input', () => update()));
     inputs.forEach((el) => el.addEventListener('change', () => update()));
@@ -745,7 +816,16 @@ export function HomePage() {
     const rowFrameRadius = document.createElement('div');
     rowFrameRadius.className = 'styleGrid__row';
     rowFrameRadius.append(name('Rayon'), frameBorderRadius, name('Fond'), frameBgColor);
-    categoryContainers.visual.append(checksVisual, rowFrameBorder, rowFrameRadius);
+    const rowFrameShadow = document.createElement('div');
+    rowFrameShadow.className = 'styleGrid__row';
+    rowFrameShadow.append(name('Ombre blur'), frameShadowBlur, name('Couleur ombre'), frameShadowColor);
+    const rowFrameText = document.createElement('div');
+    rowFrameText.className = 'styleGrid__row';
+    rowFrameText.append(name('Couleur texte'), frameTextColor, document.createElement('div'), document.createElement('div'));
+    const checksTextStyle = document.createElement('div');
+    checksTextStyle.className = 'styleChecks';
+    checksTextStyle.append(frameTextBold.label, frameTextItalic.label, frameTextUnderline.label, frameTextStrikethrough.label, frameTextUppercase.label);
+    categoryContainers.visual.append(checksVisual, rowFrameBorder, rowFrameRadius, rowFrameShadow, rowFrameText, checksTextStyle);
 
     // Show/hide categories based on selection
     function showCategory(categoryValue) {

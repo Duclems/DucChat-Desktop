@@ -623,6 +623,7 @@ body.hasFrameRed .chatMsg {
   padding: 0.3em 0.5em;
   margin: 0.2em 0;
   background: var(--frame-bg-color, transparent);
+  box-shadow: var(--frame-shadow, none);
 }
 
 .chatMsg__user {
@@ -632,7 +633,11 @@ body.hasFrameRed .chatMsg {
 }
 
 .chatMsg__text {
-  color: var(--text);
+  color: var(--frame-text-color, var(--text));
+  font-weight: var(--frame-text-weight, normal);
+  font-style: var(--frame-text-style, normal);
+  text-decoration: var(--frame-text-decoration, none);
+  text-transform: var(--frame-text-transform, none);
   min-width: 0;
   word-break: break-word;
 }
