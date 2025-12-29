@@ -120,6 +120,9 @@ body {
 
 .urlRow--wide {
   grid-template-columns: 52px 1fr auto;
+  margin: 0;
+  width: auto;
+  min-width: 300px;
 }
 
 .chatTabs {

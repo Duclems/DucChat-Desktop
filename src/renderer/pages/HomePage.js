@@ -95,8 +95,15 @@ export function HomePage() {
     return color;
   }
 
+  const h2Container = document.createElement('div');
+  h2Container.style.display = 'flex';
+  h2Container.style.justifyContent = 'space-between';
+  h2Container.style.alignItems = 'center';
+  h2Container.style.marginBottom = 'var(--space-13)';
+
   const h2 = document.createElement('h2');
   h2.textContent = 'Chat Twitch';
+  h2.style.margin = '0';
 
   const meta = document.createElement('p');
   meta.className = 'muted';
@@ -381,6 +388,7 @@ export function HomePage() {
       { value: 'messages', label: 'Messages' },
       { value: 'emotes', label: 'Emotes' },
       { value: 'colors', label: 'Couleurs' },
+      { value: 'visual', label: 'Style visuel' },
     ];
     categories.forEach((cat) => {
       const option = document.createElement('option');
@@ -633,6 +641,7 @@ export function HomePage() {
       messages: document.createElement('div'),
       emotes: document.createElement('div'),
       colors: document.createElement('div'),
+      visual: document.createElement('div'),
     };
 
     // Display category: Font, Limit, Pad
@@ -665,6 +674,9 @@ export function HomePage() {
     checksColors.append(userColors.label);
     categoryContainers.colors.append(checksColors);
 
+    // Visual style category: (empty for now)
+    // categoryContainers.visual is empty, ready for future parameters
+
     // Show/hide categories based on selection
     function showCategory(categoryValue) {
       Object.entries(categoryContainers).forEach(([key, container]) => {
@@ -679,7 +691,6 @@ export function HomePage() {
       grid.append(container);
     });
 
-    grid.append(urlRow);
     panel.append(panelTitle, categorySelect, grid);
 
     renderExampleMessage();
@@ -722,7 +733,10 @@ export function HomePage() {
     tabsContainer.append(tabLive, tabExample);
     contentContainer.append(log, exampleWrap);
     
-    wrap.append(h2, meta, panel, tabsContainer, contentContainer);
+    // Add URL to the right of h2
+    h2Container.append(h2, urlRow);
+    
+    wrap.append(h2Container, meta, panel, tabsContainer, contentContainer);
     exampleWrap.append(exampleLabelRow, exampleLog);
     
     // Test button functionality
