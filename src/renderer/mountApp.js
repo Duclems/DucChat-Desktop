@@ -19,6 +19,7 @@ export function mountApp() {
   const emoteRadiusParam = Number(params.get('emoteRadius'));
   const stackedParam = params.get('stacked');
   const msgPadParam = Number(params.get('msgPad'));
+  const msgTimeoutParam = Number(params.get('msgTimeout'));
 
   document.body.classList.toggle('isOverlay', isOverlay);
   document.body.classList.toggle('isCompact', isCompact);
@@ -34,6 +35,8 @@ export function mountApp() {
   const stacked = stackedParam === null ? false : stackedParam === '1' || stackedParam === 'true';
   const msgPad =
     Number.isFinite(msgPadParam) && msgPadParam >= 0 && msgPadParam <= 1 ? msgPadParam : null;
+  const msgTimeout =
+    Number.isFinite(msgTimeoutParam) && msgTimeoutParam >= 0 && msgTimeoutParam <= 300 ? msgTimeoutParam : null;
 
   if (fontSize) {
     document.documentElement.style.setProperty('--chat-font-size', `${fontSize}px`);
@@ -46,7 +49,7 @@ export function mountApp() {
   }
 
   // Expose a tiny runtime config for pages (optional)
-  window.__ducchatInterface = { fontSize, limit, showStreamer, userColors, emoteRadius, stacked, msgPad };
+  window.__ducchatInterface = { fontSize, limit, showStreamer, userColors, emoteRadius, stacked, msgPad, msgTimeout };
 
   const outlet = document.createElement('div');
 

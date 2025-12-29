@@ -116,7 +116,8 @@ export function HomePage() {
     const limit = Number.isFinite(cfg.limit) ? cfg.limit : MAX_DEFAULT;
     const userColors = cfg.userColors !== false;
     const stacked = cfg.stacked === true;
-    return { limit, userColors, stacked };
+    const msgTimeout = Number.isFinite(cfg.msgTimeout) && cfg.msgTimeout >= 0 ? cfg.msgTimeout : null;
+    return { limit, userColors, stacked, msgTimeout };
   }
 
   // In HTTP/overlay mode we don't run the preview panel, so we must apply interface classes here.
@@ -175,6 +176,7 @@ export function HomePage() {
     if (cfg.emoteRadius && cfg.emoteRadius > 0) u.searchParams.set('emoteRadius', String(cfg.emoteRadius));
     if (cfg.stacked) u.searchParams.set('stacked', '1');
     if (typeof cfg.msgPad === 'number') u.searchParams.set('msgPad', String(cfg.msgPad));
+    if (typeof cfg.msgTimeout === 'number' && cfg.msgTimeout > 0) u.searchParams.set('msgTimeout', String(cfg.msgTimeout));
     u.hash = '#/';
     return u.toString();
   }
@@ -223,17 +225,53 @@ export function HomePage() {
     return row;
   }
 
+  function applyTimeoutToMessage(row, msgTimeout, messageObj) {
+    if (!row || !row.parentNode) return;
+    
+    // Clear any existing timeout
+    if (row.dataset.timeoutId) {
+      clearTimeout(Number(row.dataset.timeoutId));
+      delete row.dataset.timeoutId;
+    }
+    
+    // Apply timeout if configured
+    if (msgTimeout !== null && msgTimeout > 0) {
+      const timeoutId = setTimeout(() => {
+        if (row.parentNode === log) {
+          row.remove();
+          // Try to find and remove from messages array if messageObj provided
+          if (messageObj) {
+            const idx = messages.indexOf(messageObj);
+            if (idx >= 0) messages.splice(idx, 1);
+          } else {
+            // If no messageObj, try to find by dataset
+            const userKey = row.dataset?.userkey;
+            if (userKey) {
+              const idx = messages.findIndex(m => normUserKey(m?.user) === userKey);
+              if (idx >= 0) messages.splice(idx, 1);
+            }
+          }
+        }
+      }, msgTimeout * 1000);
+      row.dataset.timeoutId = String(timeoutId);
+    }
+  }
+
   function pushMessage(m) {
     const userKey = normUserKey(m?.user);
     if (userKey && blockedSet.has(userKey)) return;
 
-    const { limit } = getInterfaceConfig();
+    const { limit, msgTimeout } = getInterfaceConfig();
     messages.push(m);
     if (messages.length > limit) messages.shift();
     const row = renderMessage(m);
+    
     log.append(row);
     if (log.childNodes.length > limit) log.removeChild(log.firstChild);
     log.scrollTop = log.scrollHeight;
+    
+    // Apply timeout
+    applyTimeoutToMessage(row, msgTimeout, m);
   }
 
   function enforceLimitNow() {
@@ -335,6 +373,23 @@ export function HomePage() {
     panelTitle.className = 'stylePanel__title';
     panelTitle.textContent = 'Style (preview + URL interface)';
 
+    // Category selector
+    const categorySelect = document.createElement('select');
+    categorySelect.className = 'styleCategorySelect';
+    const categories = [
+      { value: 'display', label: 'Affichage' },
+      { value: 'messages', label: 'Messages' },
+      { value: 'emotes', label: 'Emotes' },
+      { value: 'colors', label: 'Couleurs' },
+    ];
+    categories.forEach((cat) => {
+      const option = document.createElement('option');
+      option.value = cat.value;
+      option.textContent = cat.label;
+      categorySelect.append(option);
+    });
+    categorySelect.value = 'display';
+
     const grid = document.createElement('div');
     grid.className = 'styleGrid';
 
@@ -371,6 +426,8 @@ export function HomePage() {
     const msgPad = numInput('0.20', 0, 1);
     msgPad.step = '0.01';
     const emoteRadius = numInput('0', 0, 50);
+    const msgTimeout = numInput('0', 0, 300);
+    msgTimeout.step = '1';
     const userColors = check('Couleurs Twitch (fallback si vide)');
     const roundEmotes = check('Arrondir les emotes');
     const stacked = check('Message sous le pseudo');
@@ -383,6 +440,7 @@ export function HomePage() {
       if (typeof saved.limit === 'number') limit.value = String(saved.limit);
       if (typeof saved.msgPad === 'number') msgPad.value = String(saved.msgPad);
       if (typeof saved.emoteRadius === 'number') emoteRadius.value = String(saved.emoteRadius);
+      if (typeof saved.msgTimeout === 'number') msgTimeout.value = String(saved.msgTimeout);
       if (typeof saved.userColors === 'boolean') userColors.input.checked = saved.userColors;
       if (typeof saved.roundEmotes === 'boolean') roundEmotes.input.checked = saved.roundEmotes;
       if (typeof saved.stacked === 'boolean') stacked.input.checked = saved.stacked;
@@ -405,9 +463,21 @@ export function HomePage() {
     // Example preview of message rendering
     const exampleWrap = document.createElement('div');
     exampleWrap.className = 'examplePreview';
+    const exampleLabelRow = document.createElement('div');
+    exampleLabelRow.style.display = 'flex';
+    exampleLabelRow.style.justifyContent = 'space-between';
+    exampleLabelRow.style.alignItems = 'center';
+    exampleLabelRow.style.marginBottom = 'var(--space-8)';
     const exampleLabel = document.createElement('div');
     exampleLabel.className = 'examplePreview__label';
     exampleLabel.textContent = 'Exemple de rendu:';
+    const testBtn = document.createElement('button');
+    testBtn.className = 'btn btn--ghost';
+    testBtn.type = 'button';
+    testBtn.textContent = 'Test';
+    testBtn.style.fontSize = '12px';
+    testBtn.style.padding = '0.3em 0.8em';
+    exampleLabelRow.append(exampleLabel, testBtn);
     const exampleLog = document.createElement('div');
     exampleLog.className = 'chatLog examplePreview__log';
     exampleLog.style.height = 'auto';
@@ -483,6 +553,7 @@ export function HomePage() {
         limit: Number(limit.value) || null,
         msgPad: Number(msgPad.value),
         emoteRadius: Number(emoteRadius.value) || 0,
+        msgTimeout: Number(msgTimeout.value) || 0,
         roundEmotes: !!roundEmotes.input.checked,
         userColors: !!userColors.input.checked,
         compact: true, // Always compact by default
@@ -497,9 +568,17 @@ export function HomePage() {
         emoteRadius:
           cfg.roundEmotes && cfg.emoteRadius >= 0 && cfg.emoteRadius <= 50 ? Math.floor(cfg.emoteRadius) : 0,
         stacked: cfg.stacked,
+        msgTimeout: Number.isFinite(cfg.msgTimeout) && cfg.msgTimeout >= 0 && cfg.msgTimeout <= 300 ? cfg.msgTimeout : null,
       };
       // Apply limit immediately (no need to wait for a new message)
       enforceLimitNow();
+      
+      // Apply timeout to existing messages if timeout changed
+      const { msgTimeout: newTimeout } = getInterfaceConfig();
+      Array.from(log.children).forEach((row) => {
+        applyTimeoutToMessage(row, newTimeout, null);
+      });
+      
       applyStyleToPreview({
         fontSize: cfg.fontSize && cfg.fontSize >= 8 && cfg.fontSize <= 72 ? Math.floor(cfg.fontSize) : null,
       });
@@ -509,6 +588,7 @@ export function HomePage() {
         limit: cfg.limit ? Math.floor(cfg.limit) : null,
         msgPad: Number.isFinite(cfg.msgPad) && cfg.msgPad >= 0 && cfg.msgPad <= 1 ? cfg.msgPad : null,
         emoteRadius: cfg.emoteRadius ? Math.floor(cfg.emoteRadius) : 0,
+        msgTimeout: cfg.msgTimeout ? cfg.msgTimeout : 0,
         roundEmotes: cfg.roundEmotes,
         userColors: cfg.userColors,
         stacked: cfg.stacked,
@@ -525,6 +605,7 @@ export function HomePage() {
       font,
       limit,
       msgPad,
+      msgTimeout,
       emoteRadius,
       userColors.input,
       roundEmotes.input,
@@ -546,25 +627,60 @@ export function HomePage() {
       }
     });
 
-    // Layout
+    // Category containers
+    const categoryContainers = {
+      display: document.createElement('div'),
+      messages: document.createElement('div'),
+      emotes: document.createElement('div'),
+      colors: document.createElement('div'),
+    };
+
+    // Display category: Font, Limit, Pad
     const row1 = document.createElement('div');
     row1.className = 'styleGrid__row';
     row1.append(name('Font'), font, name('Limit'), limit);
-
     const rowPad = document.createElement('div');
     rowPad.className = 'styleGrid__row';
     rowPad.append(name('Pad'), msgPad, document.createElement('div'), document.createElement('div'));
+    categoryContainers.display.append(row1, rowPad);
 
+    // Messages category: Timeout, Stacked
+    const rowTimeout = document.createElement('div');
+    rowTimeout.className = 'styleGrid__row';
+    rowTimeout.append(name('Timeout (s)'), msgTimeout, document.createElement('div'), document.createElement('div'));
+    const checksMessages = document.createElement('div');
+    checksMessages.className = 'styleChecks';
+    checksMessages.append(stacked.label);
+    categoryContainers.messages.append(rowTimeout, checksMessages);
+
+    // Emotes category: Emote radius, Round emotes
     const rowEmotes = document.createElement('div');
     rowEmotes.className = 'styleGrid__row';
     rowEmotes.append(name('Emote'), emoteRadius, roundEmotes.label, document.createElement('div'));
+    categoryContainers.emotes.append(rowEmotes);
 
-    const checks = document.createElement('div');
-    checks.className = 'styleChecks';
-    checks.append(userColors.label, stacked.label);
+    // Colors category: User colors
+    const checksColors = document.createElement('div');
+    checksColors.className = 'styleChecks';
+    checksColors.append(userColors.label);
+    categoryContainers.colors.append(checksColors);
 
-    grid.append(row1, rowPad, rowEmotes, checks, urlRow);
-    panel.append(panelTitle, grid);
+    // Show/hide categories based on selection
+    function showCategory(categoryValue) {
+      Object.entries(categoryContainers).forEach(([key, container]) => {
+        container.style.display = key === categoryValue ? 'block' : 'none';
+      });
+    }
+    showCategory('display');
+    categorySelect.addEventListener('change', () => showCategory(categorySelect.value));
+
+    // Append all category containers to grid
+    Object.values(categoryContainers).forEach((container) => {
+      grid.append(container);
+    });
+
+    grid.append(urlRow);
+    panel.append(panelTitle, categorySelect, grid);
 
     renderExampleMessage();
 
@@ -607,7 +723,34 @@ export function HomePage() {
     contentContainer.append(log, exampleWrap);
     
     wrap.append(h2, meta, panel, tabsContainer, contentContainer);
-    exampleWrap.append(exampleLabel, exampleLog);
+    exampleWrap.append(exampleLabelRow, exampleLog);
+    
+    // Test button functionality
+    testBtn.addEventListener('click', () => {
+      const { msgTimeout } = getInterfaceConfig();
+      const testRow = createExampleRow(
+        'TestUser',
+        'Message de test avec timeout',
+        [
+          'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_32a19dbdb8ef4e09b13a9f239ffe910d/default/dark/4.0',
+        ]
+      );
+      
+      exampleLog.append(testRow);
+      
+      // Apply timeout if configured
+      if (msgTimeout !== null && msgTimeout > 0) {
+        setTimeout(() => {
+          if (testRow.parentNode === exampleLog) {
+            testRow.remove();
+          }
+        }, msgTimeout * 1000);
+      }
+      
+      // Scroll to bottom
+      exampleLog.scrollTop = exampleLog.scrollHeight;
+    });
+    
     // Initialize once
     update().catch(() => {});
   } else {
