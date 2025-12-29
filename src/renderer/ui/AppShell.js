@@ -25,6 +25,34 @@ export function AppShell({ outlet, router, isOverlay = false }) {
   const shell = document.createElement('div');
   shell.className = 'appShell';
 
+  // Twitch connection badge (top-left of the page area)
+  const connBadge = document.createElement('div');
+  connBadge.className = 'connBadge connBadge--inPage';
+  connBadge.hidden = false;
+  connBadge.classList.add('isDisconnected');
+
+  const connDot = document.createElement('span');
+  connDot.className = 'connBadge__dot';
+
+  const connText = document.createElement('span');
+  connText.className = 'connBadge__text';
+
+  connText.textContent = 'Chat: déconnecté';
+  // order: text then dot (requested)
+  connBadge.append(connText, connDot);
+
+  const setConn = (s) => {
+    if (s?.state === 'connected' && s.channel) {
+      connText.textContent = `Chat: ${s.channel}`;
+      connBadge.classList.add('isConnected');
+      connBadge.classList.remove('isDisconnected');
+    } else {
+      connText.textContent = 'Chat: déconnecté';
+      connBadge.classList.remove('isConnected');
+      connBadge.classList.add('isDisconnected');
+    }
+  };
+
   let header = null;
   if (!isOverlay) {
     header = document.createElement('header');
@@ -86,7 +114,13 @@ export function AppShell({ outlet, router, isOverlay = false }) {
 
   const main = document.createElement('main');
   main.className = 'appMain';
+  if (!isOverlay) main.append(connBadge);
   main.append(outlet);
+
+  // Electron renderer
+  if (!isOverlay && window.twitch?.onStatus) {
+    window.twitch.onStatus((s) => setConn(s));
+  }
 
   const footer = isOverlay ? null : FooterNav({ router });
 

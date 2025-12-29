@@ -35,3 +35,13 @@ contextBridge.exposeInMainWorld('twitch', {
 contextBridge.exposeInMainWorld('ui', {
   getUrls: () => ipcRenderer.invoke('ui:getUrls'),
 });
+
+contextBridge.exposeInMainWorld('pseudos', {
+  getConfig: () => ipcRenderer.invoke('pseudos:getConfig'),
+  setConfig: (config) => ipcRenderer.invoke('pseudos:setConfig', config),
+  onConfig: (callback) => {
+    const listener = (_event, cfg) => callback(cfg);
+    ipcRenderer.on('pseudos:config', listener);
+    return () => ipcRenderer.removeListener('pseudos:config', listener);
+  },
+});

@@ -154,6 +154,28 @@ app.whenReady().then(() => {
     return { ok: true };
   });
 
+  ipcMain.handle('pseudos:getConfig', async () => {
+    const cfg = await settingsStore.getPseudosConfig();
+    return { ok: true, config: cfg };
+  });
+
+  ipcMain.handle('pseudos:setConfig', async (_e, nextConfig) => {
+    const cfg = await settingsStore.setPseudosConfig(nextConfig);
+    // Push updates to Electron UI + HTTP overlays
+    try {
+      mainWindow?.webContents?.send?.('pseudos:config', cfg);
+    } catch {
+      // ignore
+    }
+    try {
+      uiServer?.setConfig?.(cfg);
+      uiServer?.broadcastConfig?.(cfg);
+    } catch {
+      // ignore
+    }
+    return { ok: true, config: cfg };
+  });
+
   createWindow();
 
   // Start local HTTP server in BOTH dev and prod:
@@ -180,6 +202,17 @@ app.whenReady().then(() => {
       // Seed initial status for new SSE clients
       const ch = twitchChat?.getChannel?.() || '';
       uiServer.broadcastStatus?.({ state: ch ? 'connected' : 'disconnected', channel: ch });
+
+      // Seed initial pseudos config for HTTP overlays
+      settingsStore.getPseudosConfig().then((cfg) => {
+        uiServer?.setConfig?.(cfg);
+        uiServer?.broadcastConfig?.(cfg);
+        try {
+          mainWindow?.webContents?.send?.('pseudos:config', cfg);
+        } catch {
+          // ignore
+        }
+      });
 
       // Load UI from the local server so browser/OBS uses same origin
       mainWindow?.loadURL(srv.url);

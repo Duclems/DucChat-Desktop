@@ -5,6 +5,73 @@ export function HomePage() {
   const isOverlay = document.body.classList.contains('isOverlay');
   const userColorCache = new Map();
 
+  /** @type {{blocked: string[], renames: Record<string,string>}} */
+  let pseudosCfg = { blocked: [], renames: {} };
+  let blockedSet = new Set();
+
+  function normUserKey(x) {
+    return String(x || '').trim().toLowerCase();
+  }
+
+  function setPseudosCfg(next) {
+    const cfg = next && typeof next === 'object' ? next : {};
+    const blockedRaw = Array.isArray(cfg.blocked) ? cfg.blocked : [];
+    const renamesRaw = cfg.renames && typeof cfg.renames === 'object' ? cfg.renames : {};
+
+    const blocked = Array.from(
+      new Set(blockedRaw.map((u) => normUserKey(u)).filter(Boolean))
+    );
+    const renames = {};
+    for (const [k, v] of Object.entries(renamesRaw)) {
+      const key = normUserKey(k);
+      const val = String(v || '').trim();
+      if (!key || !val) continue;
+      renames[key] = val;
+    }
+    pseudosCfg = { blocked, renames };
+    blockedSet = new Set(blocked);
+
+    // Apply immediately to already-rendered rows
+    try {
+      for (const row of Array.from(log.children)) {
+        const key = row?.dataset?.userkey || '';
+        if (key && blockedSet.has(key)) {
+          row.remove();
+          continue;
+        }
+        const orig = row?.dataset?.origuser || '';
+        const display = (orig && renames[normUserKey(orig)]) ? renames[normUserKey(orig)] : (orig || '');
+        const userEl = row.querySelector?.('.chatMsg__user');
+        if (userEl && display) userEl.textContent = `${display}:`;
+      }
+      // If stacked, re-measure indent after any rename changes
+      if (getInterfaceConfig().stacked) {
+        requestAnimationFrame(() => {
+          log.querySelectorAll('.chatMsg').forEach((row) => {
+            const user = row.querySelector('.chatMsg__user');
+            if (!user) return;
+            const w = user.getBoundingClientRect().width;
+            row.style.setProperty('--user-space', `${Math.ceil(w + 10)}px`);
+          });
+        });
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  function loadPreviewStyle() {
+    try {
+      return JSON.parse(localStorage.getItem('ducchat.homeStyle') || 'null') || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function savePreviewStyle(style) {
+    localStorage.setItem('ducchat.homeStyle', JSON.stringify(style));
+  }
+
   function hashString(str) {
     // Fast deterministic hash (FNV-1a)
     let h = 2166136261;
@@ -42,24 +109,93 @@ export function HomePage() {
   const MAX_DEFAULT = 200;
 
   function getInterfaceConfig() {
-    const cfg = window.__ducchatInterface || {};
+    const base = window.__ducchatInterface || {};
+    const override = (!isOverlay && window.__ducchatInterfaceOverrides) ? window.__ducchatInterfaceOverrides : {};
+    const cfg = { ...base, ...override };
+
     const limit = Number.isFinite(cfg.limit) ? cfg.limit : MAX_DEFAULT;
-    const showStreamer = cfg.showStreamer !== false;
     const userColors = cfg.userColors !== false;
-    return { limit, showStreamer, userColors };
+    const stacked = cfg.stacked === true;
+    return { limit, userColors, stacked };
+  }
+
+  // In HTTP/overlay mode we don't run the preview panel, so we must apply interface classes here.
+  // Compact is always enabled by default
+  log.classList.add('chatLog--compact');
+  log.classList.toggle('chatLog--stacked', getInterfaceConfig().stacked);
+
+  function applyStyleToPreview({ fontSize }) {
+    if (typeof fontSize === 'number') {
+      document.documentElement.style.setProperty('--chat-font-size', `${fontSize}px`);
+    } else {
+      document.documentElement.style.removeProperty('--chat-font-size');
+    }
+    // Emotes rounding
+    const r = (window.__ducchatInterfaceOverrides && typeof window.__ducchatInterfaceOverrides.emoteRadius === 'number')
+      ? window.__ducchatInterfaceOverrides.emoteRadius
+      : null;
+    if (typeof r === 'number' && r > 0) {
+      document.documentElement.style.setProperty('--emote-radius', `${r}px`);
+    } else {
+      document.documentElement.style.removeProperty('--emote-radius');
+    }
+    // Message vertical padding (em)
+    const p =
+      window.__ducchatInterfaceOverrides && typeof window.__ducchatInterfaceOverrides.msgPad === 'number'
+        ? window.__ducchatInterfaceOverrides.msgPad
+        : null;
+    if (typeof p === 'number' && p >= 0) {
+      document.documentElement.style.setProperty('--msg-pad', `${p}em`);
+    } else {
+      document.documentElement.style.removeProperty('--msg-pad');
+    }
+    // Compact is always enabled by default
+    log.classList.add('chatLog--compact');
+    log.classList.toggle('chatLog--stacked', !!window.__ducchatInterfaceOverrides?.stacked);
+
+    // Stacked mode is now handled purely by CSS, no JS needed
+  }
+
+  async function getBaseUrl() {
+    // In Electron (and in our dev proxy) we expose window.ui.getUrls().
+    const res = await window.ui?.getUrls?.();
+    if (res?.ok && res.url) return String(res.url).replace(/\/+$/, '/');
+    // Browser fallback
+    return `${window.location.origin}/`;
+  }
+
+  function buildInterfaceUrl(baseUrl, cfg) {
+    const u = new URL(baseUrl);
+    u.searchParams.set('overlay', '1');
+    if (cfg.fontSize) u.searchParams.set('fontSize', String(cfg.fontSize));
+    if (cfg.limit) u.searchParams.set('limit', String(cfg.limit));
+    u.searchParams.set('showStreamer', '1'); // Always show streamer messages
+    u.searchParams.set('userColors', cfg.userColors ? '1' : '0');
+    u.searchParams.set('compact', '1'); // Compact is always enabled
+    if (cfg.emoteRadius && cfg.emoteRadius > 0) u.searchParams.set('emoteRadius', String(cfg.emoteRadius));
+    if (cfg.stacked) u.searchParams.set('stacked', '1');
+    if (typeof cfg.msgPad === 'number') u.searchParams.set('msgPad', String(cfg.msgPad));
+    u.hash = '#/';
+    return u.toString();
   }
 
   function renderMessage(m) {
+    const origUser = String(m.user || 'unknown');
+    const userKey = normUserKey(origUser);
+    const displayUser = pseudosCfg.renames?.[userKey] || origUser;
+
     const row = document.createElement('div');
     row.className = 'chatMsg';
+    row.dataset.userkey = userKey;
+    row.dataset.origuser = origUser;
 
     const user = document.createElement('span');
     user.className = 'chatMsg__user';
-    user.textContent = `${m.user}:`;
+    user.textContent = `${displayUser}:`;
     const { userColors } = getInterfaceConfig();
     if (userColors) {
       const c = String(m.userColor || '').trim();
-      row.style.setProperty('--user-color', c || fallbackUserColor(m.user));
+      row.style.setProperty('--user-color', c || fallbackUserColor(origUser));
     }
 
     const content = document.createElement('span');
@@ -88,15 +224,34 @@ export function HomePage() {
   }
 
   function pushMessage(m) {
+    const userKey = normUserKey(m?.user);
+    if (userKey && blockedSet.has(userKey)) return;
+
     const { limit } = getInterfaceConfig();
     messages.push(m);
     if (messages.length > limit) messages.shift();
-    log.append(renderMessage(m));
+    const row = renderMessage(m);
+    log.append(row);
     if (log.childNodes.length > limit) log.removeChild(log.firstChild);
     log.scrollTop = log.scrollHeight;
   }
 
+  function enforceLimitNow() {
+    const { limit } = getInterfaceConfig();
+    while (messages.length > limit) messages.shift();
+    while (log.childNodes.length > limit) log.removeChild(log.firstChild);
+    log.scrollTop = log.scrollHeight;
+  }
+
   async function init() {
+    // Load initial pseudos config
+    try {
+      const r = await window.pseudos?.getConfig?.();
+      if (r?.ok && r.config) setPseudosCfg(r.config);
+    } catch {
+      // ignore
+    }
+
     const ch = await window.twitch?.getChannel?.();
     if (ch) {
       meta.textContent = `Chaîne: ${ch}`;
@@ -108,6 +263,14 @@ export function HomePage() {
       try {
         const es = new EventSource('/api/stream');
         meta.textContent = 'Connexion interface…';
+        es.addEventListener('config', (ev) => {
+          try {
+            const c = JSON.parse(ev.data);
+            setPseudosCfg(c);
+          } catch {
+            // ignore
+          }
+        });
         es.addEventListener('status', (ev) => {
           try {
             const s = JSON.parse(ev.data);
@@ -122,8 +285,6 @@ export function HomePage() {
         es.addEventListener('message', (ev) => {
           try {
             const m = JSON.parse(ev.data);
-            const { showStreamer } = getInterfaceConfig();
-            if (!showStreamer && m.isBroadcaster) return;
             pushMessage(m);
           } catch {
             // ignore
@@ -144,10 +305,12 @@ export function HomePage() {
   if (window.twitch?.onMessage) {
     window.twitch.onMessage((m) => {
       if (!m) return;
-      const { showStreamer } = getInterfaceConfig();
-      if (!showStreamer && m.isBroadcaster) return;
       pushMessage(m);
     });
+  }
+
+  if (window.pseudos?.onConfig) {
+    window.pseudos.onConfig((nextCfg) => setPseudosCfg(nextCfg));
   }
 
   if (window.twitch?.onStatus) {
@@ -163,8 +326,294 @@ export function HomePage() {
   init().catch(() => {});
 
   // For custom HTTP interfaces (overlay), render ONLY the chat messages.
-  if (!isOverlay) wrap.append(h2, meta);
-  wrap.append(log);
+  if (!isOverlay) {
+    // Preview controls (only in app mode)
+    const panel = document.createElement('div');
+    panel.className = 'stylePanel';
+
+    const panelTitle = document.createElement('div');
+    panelTitle.className = 'stylePanel__title';
+    panelTitle.textContent = 'Style (preview + URL interface)';
+
+    const grid = document.createElement('div');
+    grid.className = 'styleGrid';
+
+    const name = (labelText) => {
+      const s = document.createElement('div');
+      s.className = 'urlLabel';
+      s.textContent = labelText;
+      return s;
+    };
+
+    const numInput = (placeholder, min, max) => {
+      const i = document.createElement('input');
+      i.className = 'textInput';
+      i.type = 'number';
+      if (min != null) i.min = String(min);
+      if (max != null) i.max = String(max);
+      i.placeholder = placeholder;
+      return i;
+    };
+
+    const check = (text) => {
+      const label = document.createElement('label');
+      label.className = 'checkRow';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      const span = document.createElement('span');
+      span.textContent = text;
+      label.append(input, span);
+      return { label, input };
+    };
+
+    const font = numInput('18', 8, 72);
+    const limit = numInput('100', 1, 500);
+    const msgPad = numInput('0.20', 0, 1);
+    msgPad.step = '0.01';
+    const emoteRadius = numInput('0', 0, 50);
+    const userColors = check('Couleurs Twitch (fallback si vide)');
+    const roundEmotes = check('Arrondir les emotes');
+    const stacked = check('Message sous le pseudo');
+
+    userColors.input.checked = true;
+
+    const saved = loadPreviewStyle();
+    if (saved) {
+      if (typeof saved.fontSize === 'number') font.value = String(saved.fontSize);
+      if (typeof saved.limit === 'number') limit.value = String(saved.limit);
+      if (typeof saved.msgPad === 'number') msgPad.value = String(saved.msgPad);
+      if (typeof saved.emoteRadius === 'number') emoteRadius.value = String(saved.emoteRadius);
+      if (typeof saved.userColors === 'boolean') userColors.input.checked = saved.userColors;
+      if (typeof saved.roundEmotes === 'boolean') roundEmotes.input.checked = saved.roundEmotes;
+      if (typeof saved.stacked === 'boolean') stacked.input.checked = saved.stacked;
+    }
+
+    const urlRow = document.createElement('div');
+    urlRow.className = 'urlRow urlRow--wide';
+    const urlLabel = document.createElement('span');
+    urlLabel.className = 'urlLabel';
+    urlLabel.textContent = 'URL';
+    const urlInput = document.createElement('input');
+    urlInput.className = 'textInput';
+    urlInput.readOnly = true;
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn btn--ghost';
+    copyBtn.type = 'button';
+    copyBtn.textContent = 'Copier';
+    urlRow.append(urlLabel, urlInput, copyBtn);
+
+    // Example preview of message rendering
+    const exampleWrap = document.createElement('div');
+    exampleWrap.className = 'examplePreview';
+    const exampleLabel = document.createElement('div');
+    exampleLabel.className = 'examplePreview__label';
+    exampleLabel.textContent = 'Exemple de rendu:';
+    const exampleLog = document.createElement('div');
+    exampleLog.className = 'chatLog examplePreview__log';
+    exampleLog.style.height = 'auto';
+    exampleLog.style.maxHeight = '120px';
+    exampleLog.style.marginTop = 'var(--space-8)';
+
+    function createExampleRow(userName, textContent, emotes = []) {
+      const { userColors } = getInterfaceConfig();
+      
+      const row = document.createElement('div');
+      row.className = 'chatMsg';
+
+      const user = document.createElement('span');
+      user.className = 'chatMsg__user';
+      user.textContent = `${userName}:`;
+      if (userColors) {
+        row.style.setProperty('--user-color', fallbackUserColor(userName));
+      }
+
+      const content = document.createElement('span');
+      content.className = 'chatMsg__text';
+      content.textContent = textContent;
+
+      for (const emoteUrl of emotes) {
+        const emote = document.createElement('img');
+        emote.className = 'chatEmote';
+        emote.src = emoteUrl;
+        emote.alt = 'Emote';
+        emote.title = 'Emote';
+        emote.loading = 'lazy';
+        emote.decoding = 'async';
+        content.append(' ', emote);
+      }
+
+      row.append(user, content);
+      return row;
+    }
+
+    function renderExampleMessage() {
+      exampleLog.replaceChildren();
+      
+      // Apply same CSS classes as the real chat log
+      const { stacked } = getInterfaceConfig();
+      // Compact is always enabled by default
+      exampleLog.classList.add('chatLog--compact');
+      exampleLog.classList.toggle('chatLog--stacked', !!stacked);
+      
+      const row1 = createExampleRow(
+        'ExempleUser',
+        'Voici un exemple de message avec des emotes',
+        [
+          'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_32a19dbdb8ef4e09b13a9f239ffe910d/default/dark/4.0',
+          'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_72e02b2fb5af423f91f076f723034ff7/default/dark/4.0',
+        ]
+      );
+
+      const row2 = createExampleRow(
+        'AutreUser',
+        'Un deuxième message pour voir le rendu',
+        [
+          'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_eb49980ac4ea4585a7a0a7e5ae291fd7/default/dark/4.0',
+        ]
+      );
+
+      exampleLog.append(row1, row2);
+
+      // Stacked mode is now handled purely by CSS, no JS needed
+    }
+
+    const update = async () => {
+      const cfg = {
+        fontSize: Number(font.value) || null,
+        limit: Number(limit.value) || null,
+        msgPad: Number(msgPad.value),
+        emoteRadius: Number(emoteRadius.value) || 0,
+        roundEmotes: !!roundEmotes.input.checked,
+        userColors: !!userColors.input.checked,
+        compact: true, // Always compact by default
+        stacked: !!stacked.input.checked,
+      };
+
+      // Apply preview + hook runtime config
+      window.__ducchatInterfaceOverrides = {
+        limit: cfg.limit && cfg.limit >= 1 && cfg.limit <= 500 ? Math.floor(cfg.limit) : null,
+        userColors: cfg.userColors,
+        msgPad: Number.isFinite(cfg.msgPad) && cfg.msgPad >= 0 && cfg.msgPad <= 1 ? cfg.msgPad : null,
+        emoteRadius:
+          cfg.roundEmotes && cfg.emoteRadius >= 0 && cfg.emoteRadius <= 50 ? Math.floor(cfg.emoteRadius) : 0,
+        stacked: cfg.stacked,
+      };
+      // Apply limit immediately (no need to wait for a new message)
+      enforceLimitNow();
+      applyStyleToPreview({
+        fontSize: cfg.fontSize && cfg.fontSize >= 8 && cfg.fontSize <= 72 ? Math.floor(cfg.fontSize) : null,
+      });
+
+      savePreviewStyle({
+        fontSize: cfg.fontSize ? Math.floor(cfg.fontSize) : null,
+        limit: cfg.limit ? Math.floor(cfg.limit) : null,
+        msgPad: Number.isFinite(cfg.msgPad) && cfg.msgPad >= 0 && cfg.msgPad <= 1 ? cfg.msgPad : null,
+        emoteRadius: cfg.emoteRadius ? Math.floor(cfg.emoteRadius) : 0,
+        roundEmotes: cfg.roundEmotes,
+        userColors: cfg.userColors,
+        stacked: cfg.stacked,
+      });
+
+      const baseUrl = await getBaseUrl();
+      urlInput.value = buildInterfaceUrl(baseUrl, cfg);
+      
+      // Update example preview
+      renderExampleMessage();
+    };
+
+    const inputs = [
+      font,
+      limit,
+      msgPad,
+      emoteRadius,
+      userColors.input,
+      roundEmotes.input,
+      stacked.input,
+    ];
+    inputs.forEach((el) => el.addEventListener('input', () => update()));
+    inputs.forEach((el) => el.addEventListener('change', () => update()));
+
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(urlInput.value);
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = urlInput.value;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+      }
+    });
+
+    // Layout
+    const row1 = document.createElement('div');
+    row1.className = 'styleGrid__row';
+    row1.append(name('Font'), font, name('Limit'), limit);
+
+    const rowPad = document.createElement('div');
+    rowPad.className = 'styleGrid__row';
+    rowPad.append(name('Pad'), msgPad, document.createElement('div'), document.createElement('div'));
+
+    const rowEmotes = document.createElement('div');
+    rowEmotes.className = 'styleGrid__row';
+    rowEmotes.append(name('Emote'), emoteRadius, roundEmotes.label, document.createElement('div'));
+
+    const checks = document.createElement('div');
+    checks.className = 'styleChecks';
+    checks.append(userColors.label, stacked.label);
+
+    grid.append(row1, rowPad, rowEmotes, checks, urlRow);
+    panel.append(panelTitle, grid);
+
+    renderExampleMessage();
+
+    // Tabs to switch between live chat and examples
+    const tabsContainer = document.createElement('div');
+    tabsContainer.className = 'chatTabs';
+    
+    const tabLive = document.createElement('button');
+    tabLive.className = 'chatTabs__tab chatTabs__tab--active';
+    tabLive.type = 'button';
+    tabLive.textContent = 'Chat en direct';
+    
+    const tabExample = document.createElement('button');
+    tabExample.className = 'chatTabs__tab';
+    tabExample.type = 'button';
+    tabExample.textContent = 'Exemples';
+    
+    const contentContainer = document.createElement('div');
+    contentContainer.className = 'chatTabs__content';
+    
+    // Initially show live chat
+    log.style.display = 'flex';
+    exampleWrap.style.display = 'none';
+    
+    tabLive.addEventListener('click', () => {
+      tabLive.classList.add('chatTabs__tab--active');
+      tabExample.classList.remove('chatTabs__tab--active');
+      log.style.display = 'flex';
+      exampleWrap.style.display = 'none';
+    });
+    
+    tabExample.addEventListener('click', () => {
+      tabExample.classList.add('chatTabs__tab--active');
+      tabLive.classList.remove('chatTabs__tab--active');
+      log.style.display = 'none';
+      exampleWrap.style.display = 'block';
+    });
+    
+    tabsContainer.append(tabLive, tabExample);
+    contentContainer.append(log, exampleWrap);
+    
+    wrap.append(h2, meta, panel, tabsContainer, contentContainer);
+    exampleWrap.append(exampleLabel, exampleLog);
+    // Initialize once
+    update().catch(() => {});
+  } else {
+    // In overlay mode, just show the log
+    wrap.append(log);
+  }
   return wrap;
 }
 

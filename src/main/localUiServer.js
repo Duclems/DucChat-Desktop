@@ -49,6 +49,7 @@ export async function startLocalUiServer({ rootDir, host = '127.0.0.1', port = 0
   /** @type {Set<import('node:http').ServerResponse>} */
   const sseClients = new Set();
   let lastStatus = { state: 'disconnected', channel: '' };
+  let lastConfig = { blocked: [], renames: {} };
   let proxyTarget = null;
 
   function sseWrite(res, event, data) {
@@ -72,7 +73,17 @@ export async function startLocalUiServer({ rootDir, host = '127.0.0.1', port = 0
 
       if (urlPath.startsWith('/api/health')) {
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
-        res.end(JSON.stringify({ ok: true, sseClients: sseClients.size, lastStatus }, null, 2));
+        res.end(JSON.stringify({ ok: true, sseClients: sseClients.size, lastStatus, lastConfig }, null, 2));
+        return;
+      }
+
+      if (urlPath.startsWith('/api/config')) {
+        res.writeHead(200, {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Cache-Control': 'no-store',
+          'Access-Control-Allow-Origin': '*',
+        });
+        res.end(JSON.stringify({ ok: true, status: lastStatus, config: lastConfig }, null, 2));
         return;
       }
 
@@ -91,6 +102,8 @@ export async function startLocalUiServer({ rootDir, host = '127.0.0.1', port = 0
 
         // Send initial status
         sseWrite(res, 'status', lastStatus);
+        // Send initial config
+        sseWrite(res, 'config', lastConfig);
 
         // Keep-alive ping
         const ping = setInterval(() => {
@@ -246,6 +259,13 @@ export async function startLocalUiServer({ rootDir, host = '127.0.0.1', port = 0
     broadcastStatus: (status) => {
       lastStatus = status || lastStatus;
       broadcast('status', lastStatus);
+    },
+    broadcastConfig: (config) => {
+      lastConfig = config || lastConfig;
+      broadcast('config', lastConfig);
+    },
+    setConfig: (config) => {
+      lastConfig = config || lastConfig;
     },
     close: () =>
       new Promise((resolve) => {

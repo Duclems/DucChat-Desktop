@@ -50,6 +50,130 @@ body {
   scrollbar-color: rgba(229, 229, 228, 0.35) rgba(20, 20, 20, 0.35);
 }
 
+/* Home preview controls */
+.stylePanel {
+  margin-top: var(--space-13);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-13);
+  padding: var(--space-13);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.stylePanel__title {
+  font-weight: 800;
+  color: var(--title);
+  margin-bottom: var(--space-13);
+}
+
+.styleGrid {
+  display: grid;
+  gap: var(--space-13);
+}
+
+.styleGrid__row {
+  display: grid;
+  grid-template-columns: 52px 1fr 52px 1fr;
+  gap: var(--space-13);
+  align-items: center;
+}
+
+.styleActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.styleChecks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-13);
+}
+
+.styleChecks .checkRow {
+  padding: 0.35em 0.5em;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.urlRow--wide {
+  grid-template-columns: 52px 1fr auto;
+}
+
+.chatTabs {
+  margin-top: var(--space-13);
+  display: flex;
+  gap: var(--space-8);
+  border-bottom: 1px solid var(--border);
+}
+
+.chatTabs__tab {
+  padding: var(--space-8) var(--space-13);
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.chatTabs__tab:hover {
+  color: var(--title);
+}
+
+.chatTabs__tab--active {
+  color: var(--title);
+  border-bottom-color: var(--title);
+}
+
+.chatTabs__content {
+  margin-top: var(--space-13);
+}
+
+.examplePreview {
+  display: none;
+}
+
+.examplePreview__label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: var(--space-8);
+}
+
+.examplePreview__log {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-13);
+  padding: var(--space-13);
+  background: rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+}
+
+.chatLog--compact .chatEmote {
+  height: 1.15em;
+}
+
+.chatLog--stacked .chatMsg {
+  /* Username on first line, text wraps below */
+  display: block;
+  padding: 0; /* spacing handled by .chatLog gap */
+}
+
+.chatLog--stacked .chatMsg__user {
+  display: inline-block;
+  margin-right: 0.6em;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.chatLog--stacked .chatMsg__text {
+  display: inline;
+  word-break: break-word;
+  /* Text flows inline with username, wraps naturally below */
+}
+
 .appMain::-webkit-scrollbar,
 .chatLog::-webkit-scrollbar {
   width: 10px;
@@ -98,6 +222,59 @@ body {
   user-select: none;
   display: flex;
   align-items: center;
+}
+
+.connBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 1em;
+  padding: 10px 15px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(20, 20, 20, 0.92);
+  color: var(--title);
+  font-size: 11px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.connBadge--inPage {
+  position: sticky;
+  top: 0px;
+  z-index: 5;
+  align-self: flex-start;
+  margin: 0 0 var(--space-13) 0;
+}
+
+.connBadge__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(160, 160, 160, 0.9);
+  box-shadow: 0 0 0 2px rgba(160, 160, 160, 0.14);
+  flex: 0 0 auto;
+}
+
+.connBadge.isDisconnected {
+  color: var(--muted);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.connBadge.isConnected {
+  color: var(--title);
+  border-color: rgba(52, 214, 103, 0.35);
+}
+
+.connBadge.isConnected .connBadge__dot {
+  background: rgb(52, 214, 103);
+  box-shadow: 0 0 0 2px rgba(52, 214, 103, 0.18);
+  animation: dotPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 2px rgba(52, 214, 103, 0.18); }
+  50% { transform: scale(1.18); box-shadow: 0 0 0 3px rgba(52, 214, 103, 0.12); }
+  100% { transform: scale(1); box-shadow: 0 0 0 2px rgba(52, 214, 103, 0.18); }
 }
 
 .appHeader__row {
@@ -219,10 +396,6 @@ body.isOverlay .card {
   background: transparent;
 }
 
-body.isOverlay.isTransparent {
-  background: transparent;
-}
-
 .card {
   max-width: var(--content-max);
   margin: 0 auto;
@@ -322,6 +495,9 @@ body.isOverlay.isTransparent {
   padding: var(--space-13);
   background: rgba(0, 0, 0, 0.12);
   font-size: var(--chat-font-size, 14px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--msg-pad, 0.2em); /* spacing BETWEEN messages */
 }
 
 /* OBS/custom HTTP interface: no frame, no background, full height */
@@ -332,10 +508,11 @@ body.isOverlay .chatLog {
   border-radius: 0;
   padding: 0;
   background: transparent;
+  gap: var(--msg-pad, 0.15em);
 }
 
 body.isOverlay .chatMsg {
-  padding: 0.15em 0;
+  padding: 0;
 }
 
 body.isOverlay.isCompact .chatLog {
@@ -343,17 +520,12 @@ body.isOverlay.isCompact .chatLog {
   padding: 0;
 }
 
-body.isOverlay.isCompact .chatMsg {
-  font-size: 12px;
+body.isOverlay.isCompact .chatLog {
+  gap: var(--msg-pad, 0.1em);
 }
 
 body.isOverlay.isCompact .chatEmote {
-  height: 18px;
-}
-
-body.isOverlay.isTransparent .chatLog {
-  background: transparent;
-  border-color: transparent;
+  height: 1.15em;
 }
 
 .ifaceList {
@@ -411,43 +583,33 @@ body.isOverlay.isTransparent .chatLog {
   align-items: center;
 }
 
-.styleGrid {
-  margin-top: var(--space-13);
-  display: grid;
-  gap: var(--space-13);
-}
-
-.styleRow {
-  display: grid;
-  grid-template-columns: 140px 1fr;
-  gap: var(--space-13);
-  align-items: center;
-}
-
 .chatMsg {
   display: flex;
-  gap: var(--chat-gap, 0.6em);
-  line-height: var(--chat-line-height, 1.45);
-  padding: var(--chat-padding-y, 0.2em) 0;
+  gap: 0.6em;
+  line-height: 1.45;
+  padding: 0; /* spacing handled by .chatLog gap */
 }
 
 .chatMsg__user {
   color: var(--user-color, var(--title));
-  font-weight: var(--chat-user-weight, 800);
+  font-weight: 800;
   flex: 0 0 auto;
 }
 
 .chatMsg__text {
-  color: var(--chat-text-color, var(--text));
+  color: var(--text);
   min-width: 0;
   word-break: break-word;
 }
 
 .chatEmote {
-  height: var(--chat-emote-size, 22px);
+  height: 1.35em; /* scales with chat font size */
   width: auto;
-  vertical-align: middle;
+  display: inline-block;
+  /* Align emotes to the text baseline (better than "middle" for chat lines) */
+  vertical-align: -0.22em;
   margin: 0 0.1em;
+  border-radius: var(--emote-radius, 0px);
 }
 
 .footerNav {
@@ -463,7 +625,7 @@ body.isOverlay.isTransparent .chatLog {
   max-width: var(--content-max);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: var(--space-13);
   width: 100%;
 }
