@@ -22,6 +22,9 @@ export function mountApp() {
   const msgTimeoutParam = Number(params.get('msgTimeout'));
   const frameRedParam = params.get('frameRed');
   const frameBgColorParam = params.get('frameBgColor');
+  const frameBorderWidthParam = Number(params.get('frameBorderWidth'));
+  const frameBorderColorParam = params.get('frameBorderColor');
+  const frameBorderRadiusParam = Number(params.get('frameBorderRadius'));
 
   document.body.classList.toggle('isOverlay', isOverlay);
   document.body.classList.toggle('isCompact', isCompact);
@@ -41,6 +44,9 @@ export function mountApp() {
     Number.isFinite(msgTimeoutParam) && msgTimeoutParam >= 0 && msgTimeoutParam <= 300 ? msgTimeoutParam : null;
   const frameRed = frameRedParam === '1' || frameRedParam === 'true';
   const frameBgColor = frameBgColorParam && /^#[0-9A-Fa-f]{6}$/.test(frameBgColorParam) ? frameBgColorParam : null;
+  const frameBorderWidth = Number.isFinite(frameBorderWidthParam) && frameBorderWidthParam >= 0 && frameBorderWidthParam <= 20 ? Math.floor(frameBorderWidthParam) : 2;
+  const frameBorderColor = frameBorderColorParam && /^#[0-9A-Fa-f]{6}$/.test(frameBorderColorParam) ? frameBorderColorParam : '#ff0000';
+  const frameBorderRadius = Number.isFinite(frameBorderRadiusParam) && frameBorderRadiusParam >= 0 && frameBorderRadiusParam <= 50 ? Math.floor(frameBorderRadiusParam) : 0;
 
   if (fontSize) {
     document.documentElement.style.setProperty('--chat-font-size', `${fontSize}px`);
@@ -55,6 +61,11 @@ export function mountApp() {
     document.body.classList.add('hasFrameRed');
     if (frameBgColor) {
       document.documentElement.style.setProperty('--frame-bg-color', frameBgColor);
+    }
+    document.documentElement.style.setProperty('--frame-border-width', `${frameBorderWidth}px`);
+    document.documentElement.style.setProperty('--frame-border-color', frameBorderColor);
+    if (frameBorderRadius > 0) {
+      document.documentElement.style.setProperty('--frame-border-radius', `${frameBorderRadius}px`);
     }
   }
 

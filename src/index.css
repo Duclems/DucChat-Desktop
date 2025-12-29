@@ -618,8 +618,8 @@ body.isOverlay.isCompact .chatEmote {
 }
 
 body.hasFrameRed .chatMsg {
-  border: 2px solid #ff0000;
-  border-radius: 4px;
+  border: var(--frame-border-width, 2px) solid var(--frame-border-color, #ff0000);
+  border-radius: var(--frame-border-radius, 0px);
   padding: 0.3em 0.5em;
   margin: 0.2em 0;
   background: var(--frame-bg-color, transparent);

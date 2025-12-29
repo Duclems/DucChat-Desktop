@@ -184,8 +184,13 @@ export function HomePage() {
     if (cfg.stacked) u.searchParams.set('stacked', '1');
     if (typeof cfg.msgPad === 'number') u.searchParams.set('msgPad', String(cfg.msgPad));
     if (typeof cfg.msgTimeout === 'number' && cfg.msgTimeout > 0) u.searchParams.set('msgTimeout', String(cfg.msgTimeout));
-    if (cfg.frameRed) u.searchParams.set('frameRed', '1');
-    if (cfg.frameBgColor) u.searchParams.set('frameBgColor', cfg.frameBgColor);
+    if (cfg.frameRed) {
+      u.searchParams.set('frameRed', '1');
+      if (cfg.frameBgColor) u.searchParams.set('frameBgColor', cfg.frameBgColor);
+      if (cfg.frameBorderWidth) u.searchParams.set('frameBorderWidth', String(cfg.frameBorderWidth));
+      if (cfg.frameBorderColor) u.searchParams.set('frameBorderColor', cfg.frameBorderColor);
+      if (cfg.frameBorderRadius) u.searchParams.set('frameBorderRadius', String(cfg.frameBorderRadius));
+    }
     u.hash = '#/';
     return u.toString();
   }
@@ -449,8 +454,13 @@ export function HomePage() {
     const userColors = check('Couleurs Twitch (fallback si vide)');
     const roundEmotes = check('Arrondir les emotes');
     const stacked = check('Message sous le pseudo');
-    const frameRed = check('Cadre rouge');
+    const frameRed = check('Activer CSS');
     const frameBgColor = colorInput('#000000');
+    const frameBorderWidth = numInput('2', 0, 20);
+    frameBorderWidth.step = '1';
+    const frameBorderColor = colorInput('#ff0000');
+    const frameBorderRadius = numInput('0', 0, 50);
+    frameBorderRadius.step = '1';
 
     userColors.input.checked = true;
 
@@ -466,6 +476,9 @@ export function HomePage() {
       if (typeof saved.stacked === 'boolean') stacked.input.checked = saved.stacked;
       if (typeof saved.frameRed === 'boolean') frameRed.input.checked = saved.frameRed;
       if (typeof saved.frameBgColor === 'string') frameBgColor.value = saved.frameBgColor;
+      if (typeof saved.frameBorderWidth === 'number') frameBorderWidth.value = String(saved.frameBorderWidth);
+      if (typeof saved.frameBorderColor === 'string') frameBorderColor.value = saved.frameBorderColor;
+      if (typeof saved.frameBorderRadius === 'number') frameBorderRadius.value = String(saved.frameBorderRadius);
     }
 
     const urlRow = document.createElement('div');
@@ -582,6 +595,9 @@ export function HomePage() {
         stacked: !!stacked.input.checked,
         frameRed: !!frameRed.input.checked,
         frameBgColor: frameBgColor.value || '#000000',
+        frameBorderWidth: Number(frameBorderWidth.value) || 2,
+        frameBorderColor: frameBorderColor.value || '#ff0000',
+        frameBorderRadius: Number(frameBorderRadius.value) || 0,
       };
 
       // Apply preview + hook runtime config
@@ -607,13 +623,23 @@ export function HomePage() {
         fontSize: cfg.fontSize && cfg.fontSize >= 8 && cfg.fontSize <= 72 ? Math.floor(cfg.fontSize) : null,
       });
 
-      // Apply frame red style
+      // Apply custom CSS (frame + background color)
       if (cfg.frameRed) {
         document.body.classList.add('hasFrameRed');
         document.documentElement.style.setProperty('--frame-bg-color', cfg.frameBgColor);
+        document.documentElement.style.setProperty('--frame-border-width', `${cfg.frameBorderWidth}px`);
+        document.documentElement.style.setProperty('--frame-border-color', cfg.frameBorderColor);
+        if (cfg.frameBorderRadius > 0) {
+          document.documentElement.style.setProperty('--frame-border-radius', `${cfg.frameBorderRadius}px`);
+        } else {
+          document.documentElement.style.removeProperty('--frame-border-radius');
+        }
       } else {
         document.body.classList.remove('hasFrameRed');
         document.documentElement.style.removeProperty('--frame-bg-color');
+        document.documentElement.style.removeProperty('--frame-border-width');
+        document.documentElement.style.removeProperty('--frame-border-color');
+        document.documentElement.style.removeProperty('--frame-border-radius');
       }
 
       savePreviewStyle({
@@ -627,6 +653,9 @@ export function HomePage() {
         stacked: cfg.stacked,
         frameRed: cfg.frameRed,
         frameBgColor: cfg.frameBgColor,
+        frameBorderWidth: cfg.frameBorderWidth,
+        frameBorderColor: cfg.frameBorderColor,
+        frameBorderRadius: cfg.frameBorderRadius,
       });
 
       const baseUrl = await getBaseUrl();
@@ -647,6 +676,9 @@ export function HomePage() {
       stacked.input,
       frameRed.input,
       frameBgColor,
+      frameBorderWidth,
+      frameBorderColor,
+      frameBorderRadius,
     ];
     inputs.forEach((el) => el.addEventListener('input', () => update()));
     inputs.forEach((el) => el.addEventListener('change', () => update()));
@@ -703,14 +735,17 @@ export function HomePage() {
     checksColors.append(userColors.label);
     categoryContainers.colors.append(checksColors);
 
-    // Visual style category: Frame red
+    // Visual style category: Custom CSS
     const checksVisual = document.createElement('div');
     checksVisual.className = 'styleChecks';
     checksVisual.append(frameRed.label);
-    const rowFrameBg = document.createElement('div');
-    rowFrameBg.className = 'styleGrid__row';
-    rowFrameBg.append(name('Fond'), frameBgColor, document.createElement('div'), document.createElement('div'));
-    categoryContainers.visual.append(checksVisual, rowFrameBg);
+    const rowFrameBorder = document.createElement('div');
+    rowFrameBorder.className = 'styleGrid__row';
+    rowFrameBorder.append(name('Épaisseur'), frameBorderWidth, name('Couleur bordure'), frameBorderColor);
+    const rowFrameRadius = document.createElement('div');
+    rowFrameRadius.className = 'styleGrid__row';
+    rowFrameRadius.append(name('Rayon'), frameBorderRadius, name('Fond'), frameBgColor);
+    categoryContainers.visual.append(checksVisual, rowFrameBorder, rowFrameRadius);
 
     // Show/hide categories based on selection
     function showCategory(categoryValue) {
