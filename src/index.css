@@ -549,6 +549,7 @@ body.isOverlay .card {
   display: flex;
   flex-direction: column;
   gap: var(--msg-pad, 0.2em); /* spacing BETWEEN messages */
+  align-items: var(--msg-align, flex-start);
 }
 
 /* OBS/custom HTTP interface: no frame, no background, full height */
@@ -640,6 +641,8 @@ body.isOverlay.isCompact .chatEmote {
   line-height: 1.45;
   padding: 0; /* spacing handled by .chatLog gap */
   transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+  width: var(--msg-width, auto);
+  max-width: 100%;
 }
 
 body.hasFrameRed .chatMsg {

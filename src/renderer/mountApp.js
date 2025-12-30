@@ -33,6 +33,7 @@ export function mountApp() {
   const frameTextItalicParam = params.get('frameTextItalic');
   const frameTextUnderlineParam = params.get('frameTextUnderline');
   const frameTextUppercaseParam = params.get('frameTextUppercase');
+  const frameTextCapitalizeFirstParam = params.get('frameTextCapitalizeFirst');
   const userColorParam = params.get('userColor');
   const userTextBoldParam = params.get('userTextBold');
   const userTextItalicParam = params.get('userTextItalic');
@@ -44,6 +45,9 @@ export function mountApp() {
   const mentionUnderlineParam = params.get('mentionUnderline');
   const mentionUppercaseParam = params.get('mentionUppercase');
   const userCapitalizeFirstParam = params.get('userCapitalizeFirst');
+  const msgWidthTypeParam = params.get('msgWidthType');
+  const msgWidthValueParam = Number(params.get('msgWidthValue'));
+  const msgAlignParam = params.get('msgAlign');
 
   document.body.classList.toggle('isOverlay', isOverlay);
   document.body.classList.toggle('isCompact', isCompact);
@@ -74,6 +78,7 @@ export function mountApp() {
   const frameTextItalic = frameTextItalicParam === '1' || frameTextItalicParam === 'true';
   const frameTextUnderline = frameTextUnderlineParam === '1' || frameTextUnderlineParam === 'true';
   const frameTextUppercase = frameTextUppercaseParam === '1' || frameTextUppercaseParam === 'true';
+  const frameTextCapitalizeFirst = frameTextCapitalizeFirstParam === '1' || frameTextCapitalizeFirstParam === 'true';
   const userColor = userColorParam && /^#[0-9A-Fa-f]{6}$/.test(userColorParam) ? userColorParam : null;
   const userTextBold = userTextBoldParam === '1' || userTextBoldParam === 'true';
   const userTextItalic = userTextItalicParam === '1' || userTextItalicParam === 'true';
@@ -133,9 +138,21 @@ export function mountApp() {
   document.documentElement.style.setProperty('--mention-style', mentionItalic ? 'italic' : 'normal');
   document.documentElement.style.setProperty('--mention-decoration', mentionUnderline ? 'underline' : 'none');
   document.documentElement.style.setProperty('--mention-transform', mentionUppercase ? 'uppercase' : 'none');
+  
+  // Apply layout styles (width and alignment)
+  const msgWidthType = msgWidthTypeParam || 'auto';
+  const msgWidthValue = Number.isFinite(msgWidthValueParam) && msgWidthValueParam >= 50 && msgWidthValueParam <= 2000 ? msgWidthValueParam : 300;
+  const msgAlign = msgAlignParam === 'center' ? 'center' : msgAlignParam === 'right' ? 'flex-end' : 'flex-start';
+  
+  if (msgWidthType === 'fixed') {
+    document.documentElement.style.setProperty('--msg-width', `${msgWidthValue}px`);
+  } else {
+    document.documentElement.style.setProperty('--msg-width', 'auto');
+  }
+  document.documentElement.style.setProperty('--msg-align', msgAlign);
 
   // Expose a tiny runtime config for pages (optional)
-  window.__ducchatInterface = { fontSize, limit, showStreamer, userColors, emoteRadius, stacked, msgPad, msgTimeout, frameRed, frameBgColor };
+  window.__ducchatInterface = { fontSize, limit, showStreamer, userColors, emoteRadius, stacked, msgPad, msgTimeout, frameRed, frameBgColor, frameTextCapitalizeFirst };
 
   const outlet = document.createElement('div');
 

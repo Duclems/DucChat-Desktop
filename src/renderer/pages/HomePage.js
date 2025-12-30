@@ -128,9 +128,10 @@ export function HomePage() {
     const userColors = cfg.userColors !== false;
     const userColor = cfg.userColor || null;
     const userCapitalizeFirst = cfg.userCapitalizeFirst === true;
+    const frameTextCapitalizeFirst = cfg.frameTextCapitalizeFirst === true;
     const stacked = cfg.stacked === true;
     const msgTimeout = Number.isFinite(cfg.msgTimeout) && cfg.msgTimeout >= 0 ? cfg.msgTimeout : null;
-    return { limit, userColors, userColor, userCapitalizeFirst, stacked, msgTimeout };
+    return { limit, userColors, userColor, userCapitalizeFirst, frameTextCapitalizeFirst, stacked, msgTimeout };
   }
 
   // In HTTP/overlay mode we don't run the preview panel, so we must apply interface classes here.
@@ -206,6 +207,7 @@ export function HomePage() {
       if (cfg.frameTextItalic) u.searchParams.set('frameTextItalic', '1');
       if (cfg.frameTextUnderline) u.searchParams.set('frameTextUnderline', '1');
       if (cfg.frameTextUppercase) u.searchParams.set('frameTextUppercase', '1');
+      if (cfg.frameTextCapitalizeFirst) u.searchParams.set('frameTextCapitalizeFirst', '1');
       if (cfg.userColor) u.searchParams.set('userColor', cfg.userColor);
       if (cfg.userTextBold) u.searchParams.set('userTextBold', '1');
       if (cfg.userTextItalic) u.searchParams.set('userTextItalic', '1');
@@ -217,6 +219,9 @@ export function HomePage() {
       if (cfg.mentionItalic) u.searchParams.set('mentionItalic', '1');
       if (cfg.mentionUnderline) u.searchParams.set('mentionUnderline', '1');
       if (cfg.mentionUppercase) u.searchParams.set('mentionUppercase', '1');
+      if (cfg.msgWidthType) u.searchParams.set('msgWidthType', cfg.msgWidthType);
+      if (cfg.msgWidthType === 'fixed' && cfg.msgWidthValue) u.searchParams.set('msgWidthValue', String(cfg.msgWidthValue));
+      if (cfg.msgAlign) u.searchParams.set('msgAlign', cfg.msgAlign);
     }
     u.hash = '#/';
     return u.toString();
@@ -268,9 +273,24 @@ export function HomePage() {
 
     const frag = document.createDocumentFragment();
     const segs = Array.isArray(m.segments) ? m.segments : [{ type: 'text', text: m.message }];
+    
+    // Check if we need to capitalize first letter of first word
+    const { frameTextCapitalizeFirst } = getInterfaceConfig();
+    let foundFirstLetter = false;
+    
     for (const s of segs) {
       if (s?.type === 'text') {
-        frag.append(document.createTextNode(s.text || ''));
+        let text = s.text || '';
+        // Capitalize first letter of first word if option is enabled and we haven't found it yet
+        if (frameTextCapitalizeFirst && !foundFirstLetter && text.length > 0) {
+          // Find the first letter (skip whitespace and non-alphabetic characters)
+          const firstLetterIndex = text.search(/[a-zA-Z]/);
+          if (firstLetterIndex !== -1) {
+            text = text.slice(0, firstLetterIndex) + text.charAt(firstLetterIndex).toUpperCase() + text.slice(firstLetterIndex + 1);
+            foundFirstLetter = true;
+          }
+        }
+        frag.append(document.createTextNode(text));
       } else if (s?.type === 'emote' && s.url) {
         const img = document.createElement('img');
         img.className = 'chatEmote';
@@ -459,6 +479,7 @@ export function HomePage() {
       { value: 'messages', label: 'Messages' },
       { value: 'emotes', label: 'Emotes' },
       { value: 'visual', label: 'Style visuel' },
+      { value: 'layout', label: 'Position' },
     ];
     categories.forEach((cat) => {
       const option = document.createElement('option');
@@ -534,6 +555,7 @@ export function HomePage() {
     const frameTextItalic = check('Italique');
     const frameTextUnderline = check('Souligné');
     const frameTextUppercase = check('Majuscules');
+    const frameTextCapitalizeFirst = check('Première lettre en majuscule');
     const userTextBold = check('Gras');
     const userTextItalic = check('Italique');
     const userTextUnderline = check('Souligné');
@@ -545,6 +567,36 @@ export function HomePage() {
     const mentionItalic = check('Italique');
     const mentionUnderline = check('Souligné');
     const mentionUppercase = check('Majuscules');
+    
+    // Layout options
+    const msgWidthType = document.createElement('select');
+    msgWidthType.className = 'textInput';
+    const optionAuto = document.createElement('option');
+    optionAuto.value = 'auto';
+    optionAuto.textContent = 'Adapter au texte';
+    const optionFixed = document.createElement('option');
+    optionFixed.value = 'fixed';
+    optionFixed.textContent = 'Fixe';
+    msgWidthType.append(optionAuto, optionFixed);
+    msgWidthType.value = 'auto';
+    
+    const msgWidthValue = numInput('300', 50, 2000);
+    msgWidthValue.step = '10';
+    msgWidthValue.style.display = 'none'; // Hidden by default (only show when fixed is selected)
+    
+    const msgAlign = document.createElement('select');
+    msgAlign.className = 'textInput';
+    const optionLeft = document.createElement('option');
+    optionLeft.value = 'left';
+    optionLeft.textContent = 'À gauche';
+    const optionCenter = document.createElement('option');
+    optionCenter.value = 'center';
+    optionCenter.textContent = 'Centrer';
+    const optionRight = document.createElement('option');
+    optionRight.value = 'right';
+    optionRight.textContent = 'À droite';
+    msgAlign.append(optionLeft, optionCenter, optionRight);
+    msgAlign.value = 'left';
 
     userColors.input.checked = true;
 
@@ -571,6 +623,7 @@ export function HomePage() {
       if (typeof saved.frameTextItalic === 'boolean') frameTextItalic.input.checked = saved.frameTextItalic;
       if (typeof saved.frameTextUnderline === 'boolean') frameTextUnderline.input.checked = saved.frameTextUnderline;
       if (typeof saved.frameTextUppercase === 'boolean') frameTextUppercase.input.checked = saved.frameTextUppercase;
+      if (typeof saved.frameTextCapitalizeFirst === 'boolean') frameTextCapitalizeFirst.input.checked = saved.frameTextCapitalizeFirst;
       if (typeof saved.userColor === 'string') userColor.value = saved.userColor;
       if (typeof saved.userCapitalizeFirst === 'boolean') userCapitalizeFirst.input.checked = saved.userCapitalizeFirst;
       if (typeof saved.mentionColor === 'string') mentionColor.value = saved.mentionColor;
@@ -578,6 +631,11 @@ export function HomePage() {
       if (typeof saved.mentionItalic === 'boolean') mentionItalic.input.checked = saved.mentionItalic;
       if (typeof saved.mentionUnderline === 'boolean') mentionUnderline.input.checked = saved.mentionUnderline;
       if (typeof saved.mentionUppercase === 'boolean') mentionUppercase.input.checked = saved.mentionUppercase;
+      if (typeof saved.msgWidthType === 'string') msgWidthType.value = saved.msgWidthType;
+      if (typeof saved.msgWidthValue === 'number') msgWidthValue.value = String(saved.msgWidthValue);
+      if (typeof saved.msgAlign === 'string') msgAlign.value = saved.msgAlign;
+      // Show/hide width value input based on saved width type
+      msgWidthValue.style.display = msgWidthType.value === 'fixed' ? 'block' : 'none';
       if (typeof saved.userTextBold === 'boolean') userTextBold.input.checked = saved.userTextBold;
       if (typeof saved.userTextItalic === 'boolean') userTextItalic.input.checked = saved.userTextItalic;
       if (typeof saved.userTextUnderline === 'boolean') userTextUnderline.input.checked = saved.userTextUnderline;
@@ -630,7 +688,7 @@ export function HomePage() {
     exampleLog.style.marginTop = 'var(--space-8)';
 
     function createExampleRow(userName, textContent, emotes = []) {
-      const { userColors, userColor: customUserColor, userCapitalizeFirst } = getInterfaceConfig();
+      const { userColors, userColor: customUserColor, userCapitalizeFirst, frameTextCapitalizeFirst } = getInterfaceConfig();
       
       let displayName = userName;
       if (userCapitalizeFirst && displayName.length > 0) {
@@ -659,6 +717,7 @@ export function HomePage() {
       const mentionRegex = /(@[a-zA-Z0-9_]+)/g;
       const parts = textContent.split(mentionRegex);
       const frag = document.createDocumentFragment();
+      let foundFirstLetter = false;
       for (const part of parts) {
         if (part.startsWith('@')) {
           const mentionName = part.slice(1);
@@ -667,7 +726,16 @@ export function HomePage() {
           mentionSpan.textContent = part;
           frag.append(mentionSpan);
         } else if (part) {
-          frag.append(document.createTextNode(part));
+          let text = part;
+          // Capitalize first letter of first word if option is enabled and we haven't found it yet
+          if (frameTextCapitalizeFirst && !foundFirstLetter && text.length > 0) {
+            const firstLetterIndex = text.search(/[a-zA-Z]/);
+            if (firstLetterIndex !== -1) {
+              text = text.slice(0, firstLetterIndex) + text.charAt(firstLetterIndex).toUpperCase() + text.slice(firstLetterIndex + 1);
+              foundFirstLetter = true;
+            }
+          }
+          frag.append(document.createTextNode(text));
         }
       }
       
@@ -744,6 +812,7 @@ export function HomePage() {
         frameTextItalic: !!frameTextItalic.input.checked,
         frameTextUnderline: !!frameTextUnderline.input.checked,
         frameTextUppercase: !!frameTextUppercase.input.checked,
+        frameTextCapitalizeFirst: !!frameTextCapitalizeFirst.input.checked,
         userColor: userColor.value || '#e5e5e4',
         userTextBold: !!userTextBold.input.checked,
         userTextItalic: !!userTextItalic.input.checked,
@@ -755,6 +824,9 @@ export function HomePage() {
         mentionItalic: !!mentionItalic.input.checked,
         mentionUnderline: !!mentionUnderline.input.checked,
         mentionUppercase: !!mentionUppercase.input.checked,
+        msgWidthType: msgWidthType.value || 'auto',
+        msgWidthValue: Number(msgWidthValue.value) || 300,
+        msgAlign: msgAlign.value || 'left',
       };
 
       // Apply preview + hook runtime config
@@ -763,6 +835,7 @@ export function HomePage() {
         userColors: cfg.userColors,
         userColor: cfg.userColor,
         userCapitalizeFirst: cfg.userCapitalizeFirst,
+        frameTextCapitalizeFirst: cfg.frameTextCapitalizeFirst,
         msgPad: Number.isFinite(cfg.msgPad) && cfg.msgPad >= 0 && cfg.msgPad <= 1 ? cfg.msgPad : null,
         emoteRadius:
           cfg.roundEmotes && cfg.emoteRadius >= 0 && cfg.emoteRadius <= 50 ? Math.floor(cfg.emoteRadius) : 0,
@@ -825,6 +898,14 @@ export function HomePage() {
       document.documentElement.style.setProperty('--mention-decoration', cfg.mentionUnderline ? 'underline' : 'none');
       document.documentElement.style.setProperty('--mention-transform', cfg.mentionUppercase ? 'uppercase' : 'none');
       
+      // Apply layout styles (width and alignment)
+      if (cfg.msgWidthType === 'fixed') {
+        document.documentElement.style.setProperty('--msg-width', `${cfg.msgWidthValue}px`);
+      } else {
+        document.documentElement.style.setProperty('--msg-width', 'auto');
+      }
+      document.documentElement.style.setProperty('--msg-align', cfg.msgAlign || 'left');
+      
       if (!cfg.frameRed) {
         document.body.classList.remove('hasFrameRed');
         document.documentElement.style.removeProperty('--frame-bg-color');
@@ -840,14 +921,13 @@ export function HomePage() {
         document.documentElement.style.removeProperty('--frame-text-transform');
       }
       
-      // Update existing messages' capitalization
+      // Update existing messages' user capitalization
       const { userCapitalizeFirst: newCapitalizeFirst } = getInterfaceConfig();
       Array.from(log.querySelectorAll('.chatMsg__user')).forEach((userEl) => {
         const currentText = userEl.textContent || '';
         // Remove colon and space to get the username
         const username = currentText.replace(/ :$/, '');
         if (username.length > 0) {
-          const capitalized = username.charAt(0).toUpperCase() + username.slice(1).toLowerCase();
           const original = userEl.closest('.chatMsg')?.dataset?.origuser || username;
           const userKey = normUserKey(original);
           const renamed = pseudosCfg.renames?.[userKey] || original;
@@ -856,6 +936,29 @@ export function HomePage() {
             displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1).toLowerCase();
           }
           userEl.textContent = `${displayName} :`;
+        }
+      });
+      
+      // Update existing messages' text capitalization
+      const { frameTextCapitalizeFirst: newTextCapitalizeFirst } = getInterfaceConfig();
+      Array.from(log.querySelectorAll('.chatMsg__text')).forEach((textEl) => {
+        // Get all text nodes and mentions/emotes
+        const walker = document.createTreeWalker(textEl, NodeFilter.SHOW_TEXT, null);
+        let foundFirstLetter = false;
+        const textNodes = [];
+        while (walker.nextNode()) {
+          textNodes.push(walker.currentNode);
+        }
+        
+        for (const textNode of textNodes) {
+          if (newTextCapitalizeFirst && !foundFirstLetter && textNode.textContent) {
+            const text = textNode.textContent;
+            const firstLetterIndex = text.search(/[a-zA-Z]/);
+            if (firstLetterIndex !== -1) {
+              textNode.textContent = text.slice(0, firstLetterIndex) + text.charAt(firstLetterIndex).toUpperCase() + text.slice(firstLetterIndex + 1);
+              foundFirstLetter = true;
+            }
+          }
         }
       });
       
@@ -881,6 +984,7 @@ export function HomePage() {
         frameTextItalic: cfg.frameTextItalic,
         frameTextUnderline: cfg.frameTextUnderline,
         frameTextUppercase: cfg.frameTextUppercase,
+        frameTextCapitalizeFirst: cfg.frameTextCapitalizeFirst,
         userColor: cfg.userColor,
         userTextBold: cfg.userTextBold,
         userTextItalic: cfg.userTextItalic,
@@ -892,6 +996,9 @@ export function HomePage() {
         mentionItalic: cfg.mentionItalic,
         mentionUnderline: cfg.mentionUnderline,
         mentionUppercase: cfg.mentionUppercase,
+        msgWidthType: cfg.msgWidthType,
+        msgWidthValue: cfg.msgWidthValue,
+        msgAlign: cfg.msgAlign,
       });
 
       const baseUrl = await getBaseUrl();
@@ -923,6 +1030,7 @@ export function HomePage() {
       frameTextItalic.input,
       frameTextUnderline.input,
       frameTextUppercase.input,
+      frameTextCapitalizeFirst.input,
       userColor,
       userTextBold.input,
       userTextItalic.input,
@@ -934,6 +1042,9 @@ export function HomePage() {
       mentionItalic.input,
       mentionUnderline.input,
       mentionUppercase.input,
+      msgWidthType,
+      msgWidthValue,
+      msgAlign,
     ];
     inputs.forEach((el) => el.addEventListener('input', () => update()));
     inputs.forEach((el) => el.addEventListener('change', () => update()));
@@ -957,6 +1068,7 @@ export function HomePage() {
       messages: document.createElement('div'),
       emotes: document.createElement('div'),
       visual: document.createElement('div'),
+      layout: document.createElement('div'),
     };
 
     // Display category: Font, Limit, Pad
@@ -983,6 +1095,22 @@ export function HomePage() {
     rowEmotes.append(name('Emote'), emoteRadius, roundEmotes.label, document.createElement('div'));
     categoryContainers.emotes.append(rowEmotes);
 
+    // Layout category: Width type, Width value, Align
+    const rowWidthType = document.createElement('div');
+    rowWidthType.className = 'styleGrid__row';
+    rowWidthType.append(name('Largeur'), msgWidthType, document.createElement('div'), document.createElement('div'));
+    const rowWidthValue = document.createElement('div');
+    rowWidthValue.className = 'styleGrid__row';
+    rowWidthValue.append(name('Largeur (px)'), msgWidthValue, document.createElement('div'), document.createElement('div'));
+    const rowAlign = document.createElement('div');
+    rowAlign.className = 'styleGrid__row';
+    rowAlign.append(name('Alignement'), msgAlign, document.createElement('div'), document.createElement('div'));
+    categoryContainers.layout.append(rowWidthType, rowWidthValue, rowAlign);
+    
+    // Show/hide width value input based on width type
+    msgWidthType.addEventListener('change', () => {
+      msgWidthValue.style.display = msgWidthType.value === 'fixed' ? 'block' : 'none';
+    });
 
     // Visual style category: Custom CSS
     const checksVisual = document.createElement('div');
@@ -1061,7 +1189,10 @@ export function HomePage() {
     const checksTextStyle = document.createElement('div');
     checksTextStyle.className = 'styleChecks';
     checksTextStyle.append(frameTextBold.label, frameTextItalic.label, frameTextUnderline.label, frameTextUppercase.label);
-    sectionText.append(sectionTextTitle, rowFrameText, checksTextStyle);
+    const checksTextCapitalize = document.createElement('div');
+    checksTextCapitalize.className = 'styleChecks';
+    checksTextCapitalize.append(frameTextCapitalizeFirst.label);
+    sectionText.append(sectionTextTitle, rowFrameText, checksTextStyle, checksTextCapitalize);
     
     // Section: Pseudonyme
     const sectionUser = document.createElement('div');
