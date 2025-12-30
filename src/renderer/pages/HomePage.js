@@ -40,7 +40,11 @@ export function HomePage() {
           continue;
         }
         const orig = row?.dataset?.origuser || '';
-        const display = (orig && renames[normUserKey(orig)]) ? renames[normUserKey(orig)] : (orig || '');
+        let display = (orig && renames[normUserKey(orig)]) ? renames[normUserKey(orig)] : (orig || '');
+        const { userCapitalizeFirst } = getInterfaceConfig();
+        if (userCapitalizeFirst && display.length > 0) {
+          display = display.charAt(0).toUpperCase() + display.slice(1).toLowerCase();
+        }
         const userEl = row.querySelector?.('.chatMsg__user');
         if (userEl && display) userEl.textContent = `${display} :`;
       }
@@ -123,9 +127,10 @@ export function HomePage() {
     const limit = Number.isFinite(cfg.limit) ? cfg.limit : MAX_DEFAULT;
     const userColors = cfg.userColors !== false;
     const userColor = cfg.userColor || null;
+    const userCapitalizeFirst = cfg.userCapitalizeFirst === true;
     const stacked = cfg.stacked === true;
     const msgTimeout = Number.isFinite(cfg.msgTimeout) && cfg.msgTimeout >= 0 ? cfg.msgTimeout : null;
-    return { limit, userColors, userColor, stacked, msgTimeout };
+    return { limit, userColors, userColor, userCapitalizeFirst, stacked, msgTimeout };
   }
 
   // In HTTP/overlay mode we don't run the preview panel, so we must apply interface classes here.
@@ -206,6 +211,12 @@ export function HomePage() {
       if (cfg.userTextItalic) u.searchParams.set('userTextItalic', '1');
       if (cfg.userTextUnderline) u.searchParams.set('userTextUnderline', '1');
       if (cfg.userTextUppercase) u.searchParams.set('userTextUppercase', '1');
+      if (cfg.userCapitalizeFirst) u.searchParams.set('userCapitalizeFirst', '1');
+      if (cfg.mentionColor) u.searchParams.set('mentionColor', cfg.mentionColor);
+      if (cfg.mentionBold) u.searchParams.set('mentionBold', '1');
+      if (cfg.mentionItalic) u.searchParams.set('mentionItalic', '1');
+      if (cfg.mentionUnderline) u.searchParams.set('mentionUnderline', '1');
+      if (cfg.mentionUppercase) u.searchParams.set('mentionUppercase', '1');
     }
     u.hash = '#/';
     return u.toString();
@@ -214,7 +225,13 @@ export function HomePage() {
   function renderMessage(m) {
     const origUser = String(m.user || 'unknown');
     const userKey = normUserKey(origUser);
-    const displayUser = pseudosCfg.renames?.[userKey] || origUser;
+    let displayUser = pseudosCfg.renames?.[userKey] || origUser;
+    
+    // Capitalize first letter if option is enabled
+    const { userCapitalizeFirst } = getInterfaceConfig();
+    if (userCapitalizeFirst && displayUser.length > 0) {
+      displayUser = displayUser.charAt(0).toUpperCase() + displayUser.slice(1).toLowerCase();
+    }
 
     const row = document.createElement('div');
     row.className = 'chatMsg';
@@ -263,6 +280,21 @@ export function HomePage() {
         img.loading = 'lazy';
         img.decoding = 'async';
         frag.append(img);
+      } else if (s?.type === 'mention' && s.username) {
+        // Check if username is renamed
+        const mentionKey = normUserKey(s.username);
+        let displayMention = pseudosCfg.renames?.[mentionKey] || s.username;
+        
+        // Apply capitalization if enabled
+        const { userCapitalizeFirst } = getInterfaceConfig();
+        if (userCapitalizeFirst && displayMention.length > 0) {
+          displayMention = displayMention.charAt(0).toUpperCase() + displayMention.slice(1).toLowerCase();
+        }
+        
+        const mentionSpan = document.createElement('span');
+        mentionSpan.className = 'chatMsg__mention';
+        mentionSpan.textContent = `@${displayMention}`;
+        frag.append(mentionSpan);
       }
     }
     content.append(frag);
@@ -506,7 +538,13 @@ export function HomePage() {
     const userTextItalic = check('Italique');
     const userTextUnderline = check('Souligné');
     const userTextUppercase = check('Majuscules');
+    const userCapitalizeFirst = check('Première lettre en majuscule');
     const userColor = colorInput('#e5e5e4');
+    const mentionColor = colorInput('#9146ff');
+    const mentionBold = check('Gras');
+    const mentionItalic = check('Italique');
+    const mentionUnderline = check('Souligné');
+    const mentionUppercase = check('Majuscules');
 
     userColors.input.checked = true;
 
@@ -534,11 +572,24 @@ export function HomePage() {
       if (typeof saved.frameTextUnderline === 'boolean') frameTextUnderline.input.checked = saved.frameTextUnderline;
       if (typeof saved.frameTextUppercase === 'boolean') frameTextUppercase.input.checked = saved.frameTextUppercase;
       if (typeof saved.userColor === 'string') userColor.value = saved.userColor;
+      if (typeof saved.userCapitalizeFirst === 'boolean') userCapitalizeFirst.input.checked = saved.userCapitalizeFirst;
+      if (typeof saved.mentionColor === 'string') mentionColor.value = saved.mentionColor;
+      if (typeof saved.mentionBold === 'boolean') mentionBold.input.checked = saved.mentionBold;
+      if (typeof saved.mentionItalic === 'boolean') mentionItalic.input.checked = saved.mentionItalic;
+      if (typeof saved.mentionUnderline === 'boolean') mentionUnderline.input.checked = saved.mentionUnderline;
+      if (typeof saved.mentionUppercase === 'boolean') mentionUppercase.input.checked = saved.mentionUppercase;
       if (typeof saved.userTextBold === 'boolean') userTextBold.input.checked = saved.userTextBold;
       if (typeof saved.userTextItalic === 'boolean') userTextItalic.input.checked = saved.userTextItalic;
       if (typeof saved.userTextUnderline === 'boolean') userTextUnderline.input.checked = saved.userTextUnderline;
       if (typeof saved.userTextUppercase === 'boolean') userTextUppercase.input.checked = saved.userTextUppercase;
     }
+    
+    // Apply initial mention styles (always enabled)
+    document.documentElement.style.setProperty('--mention-color', mentionColor.value || '#9146ff');
+    document.documentElement.style.setProperty('--mention-weight', mentionBold.input.checked ? 'bold' : 'normal');
+    document.documentElement.style.setProperty('--mention-style', mentionItalic.input.checked ? 'italic' : 'normal');
+    document.documentElement.style.setProperty('--mention-decoration', mentionUnderline.input.checked ? 'underline' : 'none');
+    document.documentElement.style.setProperty('--mention-transform', mentionUppercase.input.checked ? 'uppercase' : 'none');
 
     const urlRow = document.createElement('div');
     urlRow.className = 'urlRow urlRow--wide';
@@ -579,14 +630,19 @@ export function HomePage() {
     exampleLog.style.marginTop = 'var(--space-8)';
 
     function createExampleRow(userName, textContent, emotes = []) {
-      const { userColors, userColor: customUserColor } = getInterfaceConfig();
+      const { userColors, userColor: customUserColor, userCapitalizeFirst } = getInterfaceConfig();
+      
+      let displayName = userName;
+      if (userCapitalizeFirst && displayName.length > 0) {
+        displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1).toLowerCase();
+      }
       
       const row = document.createElement('div');
       row.className = 'chatMsg';
 
       const user = document.createElement('span');
       user.className = 'chatMsg__user';
-      user.textContent = `${userName} :`;
+      user.textContent = `${displayName} :`;
       if (userColors) {
         // In example, simulate Twitch color with random color
         row.style.setProperty('--user-color', fallbackUserColor(userName));
@@ -598,8 +654,24 @@ export function HomePage() {
 
       const content = document.createElement('span');
       content.className = 'chatMsg__text';
-      content.textContent = textContent;
-
+      
+      // Parse mentions in example text (before emotes)
+      const mentionRegex = /(@[a-zA-Z0-9_]+)/g;
+      const parts = textContent.split(mentionRegex);
+      const frag = document.createDocumentFragment();
+      for (const part of parts) {
+        if (part.startsWith('@')) {
+          const mentionName = part.slice(1);
+          const mentionSpan = document.createElement('span');
+          mentionSpan.className = 'chatMsg__mention';
+          mentionSpan.textContent = part;
+          frag.append(mentionSpan);
+        } else if (part) {
+          frag.append(document.createTextNode(part));
+        }
+      }
+      
+      // Add emotes after text
       for (const emoteUrl of emotes) {
         const emote = document.createElement('img');
         emote.className = 'chatEmote';
@@ -608,8 +680,10 @@ export function HomePage() {
         emote.title = 'Emote';
         emote.loading = 'lazy';
         emote.decoding = 'async';
-        content.append(' ', emote);
+        frag.append(' ', emote);
       }
+      
+      content.append(frag);
 
       row.append(user, content);
       return row;
@@ -626,7 +700,7 @@ export function HomePage() {
       
       const row1 = createExampleRow(
         'ExempleUser',
-        'Voici un exemple de message avec des emotes',
+        'Voici un exemple de message avec @AutreUser et des emotes',
         [
           'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_32a19dbdb8ef4e09b13a9f239ffe910d/default/dark/4.0',
           'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_72e02b2fb5af423f91f076f723034ff7/default/dark/4.0',
@@ -635,7 +709,7 @@ export function HomePage() {
 
       const row2 = createExampleRow(
         'AutreUser',
-        'Un deuxième message pour voir le rendu',
+        'Un deuxième message avec @ExempleUser pour voir le rendu',
         [
           'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_eb49980ac4ea4585a7a0a7e5ae291fd7/default/dark/4.0',
         ]
@@ -675,12 +749,20 @@ export function HomePage() {
         userTextItalic: !!userTextItalic.input.checked,
         userTextUnderline: !!userTextUnderline.input.checked,
         userTextUppercase: !!userTextUppercase.input.checked,
+        userCapitalizeFirst: !!userCapitalizeFirst.input.checked,
+        mentionColor: mentionColor.value || '#9146ff',
+        mentionBold: !!mentionBold.input.checked,
+        mentionItalic: !!mentionItalic.input.checked,
+        mentionUnderline: !!mentionUnderline.input.checked,
+        mentionUppercase: !!mentionUppercase.input.checked,
       };
 
       // Apply preview + hook runtime config
       window.__ducchatInterfaceOverrides = {
         limit: cfg.limit && cfg.limit >= 1 && cfg.limit <= 500 ? Math.floor(cfg.limit) : null,
         userColors: cfg.userColors,
+        userColor: cfg.userColor,
+        userCapitalizeFirst: cfg.userCapitalizeFirst,
         msgPad: Number.isFinite(cfg.msgPad) && cfg.msgPad >= 0 && cfg.msgPad <= 1 ? cfg.msgPad : null,
         emoteRadius:
           cfg.roundEmotes && cfg.emoteRadius >= 0 && cfg.emoteRadius <= 50 ? Math.floor(cfg.emoteRadius) : 0,
@@ -736,6 +818,13 @@ export function HomePage() {
       document.documentElement.style.setProperty('--user-text-decoration', cfg.userTextUnderline ? 'underline' : 'none');
       document.documentElement.style.setProperty('--user-text-transform', cfg.userTextUppercase ? 'uppercase' : 'none');
       
+      // Apply mention styles (always enabled)
+      document.documentElement.style.setProperty('--mention-color', cfg.mentionColor || '#9146ff');
+      document.documentElement.style.setProperty('--mention-weight', cfg.mentionBold ? 'bold' : 'normal');
+      document.documentElement.style.setProperty('--mention-style', cfg.mentionItalic ? 'italic' : 'normal');
+      document.documentElement.style.setProperty('--mention-decoration', cfg.mentionUnderline ? 'underline' : 'none');
+      document.documentElement.style.setProperty('--mention-transform', cfg.mentionUppercase ? 'uppercase' : 'none');
+      
       if (!cfg.frameRed) {
         document.body.classList.remove('hasFrameRed');
         document.documentElement.style.removeProperty('--frame-bg-color');
@@ -750,7 +839,26 @@ export function HomePage() {
         document.documentElement.style.removeProperty('--frame-text-decoration');
         document.documentElement.style.removeProperty('--frame-text-transform');
       }
-
+      
+      // Update existing messages' capitalization
+      const { userCapitalizeFirst: newCapitalizeFirst } = getInterfaceConfig();
+      Array.from(log.querySelectorAll('.chatMsg__user')).forEach((userEl) => {
+        const currentText = userEl.textContent || '';
+        // Remove colon and space to get the username
+        const username = currentText.replace(/ :$/, '');
+        if (username.length > 0) {
+          const capitalized = username.charAt(0).toUpperCase() + username.slice(1).toLowerCase();
+          const original = userEl.closest('.chatMsg')?.dataset?.origuser || username;
+          const userKey = normUserKey(original);
+          const renamed = pseudosCfg.renames?.[userKey] || original;
+          let displayName = renamed;
+          if (newCapitalizeFirst) {
+            displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1).toLowerCase();
+          }
+          userEl.textContent = `${displayName} :`;
+        }
+      });
+      
       savePreviewStyle({
         fontSize: cfg.fontSize ? Math.floor(cfg.fontSize) : null,
         limit: cfg.limit ? Math.floor(cfg.limit) : null,
@@ -778,6 +886,12 @@ export function HomePage() {
         userTextItalic: cfg.userTextItalic,
         userTextUnderline: cfg.userTextUnderline,
         userTextUppercase: cfg.userTextUppercase,
+        userCapitalizeFirst: cfg.userCapitalizeFirst,
+        mentionColor: cfg.mentionColor,
+        mentionBold: cfg.mentionBold,
+        mentionItalic: cfg.mentionItalic,
+        mentionUnderline: cfg.mentionUnderline,
+        mentionUppercase: cfg.mentionUppercase,
       });
 
       const baseUrl = await getBaseUrl();
@@ -814,6 +928,12 @@ export function HomePage() {
       userTextItalic.input,
       userTextUnderline.input,
       userTextUppercase.input,
+      userCapitalizeFirst.input,
+      mentionColor,
+      mentionBold.input,
+      mentionItalic.input,
+      mentionUnderline.input,
+      mentionUppercase.input,
     ];
     inputs.forEach((el) => el.addEventListener('input', () => update()));
     inputs.forEach((el) => el.addEventListener('change', () => update()));
@@ -879,6 +999,7 @@ export function HomePage() {
       { value: 'shadow', label: 'Ombre intérieure' },
       { value: 'text', label: 'Texte' },
       { value: 'user', label: 'Pseudonyme' },
+      { value: 'mention', label: 'Citation' },
     ];
     visualSections.forEach((sec) => {
       const option = document.createElement('option');
@@ -957,7 +1078,25 @@ export function HomePage() {
     const checksUserStyle = document.createElement('div');
     checksUserStyle.className = 'styleChecks';
     checksUserStyle.append(userTextBold.label, userTextItalic.label, userTextUnderline.label, userTextUppercase.label);
-    sectionUser.append(sectionUserTitle, checksUserColors, rowUserColor, checksUserStyle);
+    const checksUserCapitalize = document.createElement('div');
+    checksUserCapitalize.className = 'styleChecks';
+    checksUserCapitalize.append(userCapitalizeFirst.label);
+    sectionUser.append(sectionUserTitle, checksUserColors, rowUserColor, checksUserStyle, checksUserCapitalize);
+    
+    // Section: Citation
+    const sectionMention = document.createElement('div');
+    sectionMention.className = 'styleSection';
+    sectionMention.dataset.visualSection = 'mention';
+    const sectionMentionTitle = document.createElement('div');
+    sectionMentionTitle.className = 'styleSection__title';
+    sectionMentionTitle.textContent = 'Citation';
+    const rowMentionColor = document.createElement('div');
+    rowMentionColor.className = 'styleGrid__row';
+    rowMentionColor.append(name('Couleur'), mentionColor, document.createElement('div'), document.createElement('div'));
+    const checksMentionStyle = document.createElement('div');
+    checksMentionStyle.className = 'styleChecks';
+    checksMentionStyle.append(mentionBold.label, mentionItalic.label, mentionUnderline.label, mentionUppercase.label);
+    sectionMention.append(sectionMentionTitle, rowMentionColor, checksMentionStyle);
     
     // Add data attributes to sections for selection
     sectionBorder.dataset.visualSection = 'border';
@@ -967,7 +1106,7 @@ export function HomePage() {
     sectionUser.dataset.visualSection = 'user';
     
     // Add sections to container
-    visualSectionsContainer.append(sectionBorder, sectionBg, sectionShadow, sectionText, sectionUser);
+    visualSectionsContainer.append(sectionBorder, sectionBg, sectionShadow, sectionText, sectionUser, sectionMention);
     
     // Show/hide visual sections based on selection
     function showVisualSection(sectionValue) {

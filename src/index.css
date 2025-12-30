@@ -670,6 +670,14 @@ body.hasFrameRed .chatMsg {
   word-break: break-word;
 }
 
+.chatMsg__mention {
+  color: var(--mention-color, #9146ff);
+  font-weight: var(--mention-weight, normal);
+  font-style: var(--mention-style, normal);
+  text-decoration: var(--mention-decoration, none);
+  text-transform: var(--mention-transform, none);
+}
+
 .chatEmote {
   height: 1.35em; /* scales with chat font size */
   width: auto;

@@ -38,6 +38,12 @@ export function mountApp() {
   const userTextItalicParam = params.get('userTextItalic');
   const userTextUnderlineParam = params.get('userTextUnderline');
   const userTextUppercaseParam = params.get('userTextUppercase');
+  const mentionColorParam = params.get('mentionColor');
+  const mentionBoldParam = params.get('mentionBold');
+  const mentionItalicParam = params.get('mentionItalic');
+  const mentionUnderlineParam = params.get('mentionUnderline');
+  const mentionUppercaseParam = params.get('mentionUppercase');
+  const userCapitalizeFirstParam = params.get('userCapitalizeFirst');
 
   document.body.classList.toggle('isOverlay', isOverlay);
   document.body.classList.toggle('isCompact', isCompact);
@@ -73,6 +79,12 @@ export function mountApp() {
   const userTextItalic = userTextItalicParam === '1' || userTextItalicParam === 'true';
   const userTextUnderline = userTextUnderlineParam === '1' || userTextUnderlineParam === 'true';
   const userTextUppercase = userTextUppercaseParam === '1' || userTextUppercaseParam === 'true';
+  const mentionColor = mentionColorParam && /^#[0-9A-Fa-f]{6}$/.test(mentionColorParam) ? mentionColorParam : '#9146ff';
+  const mentionBold = mentionBoldParam === '1' || mentionBoldParam === 'true';
+  const mentionItalic = mentionItalicParam === '1' || mentionItalicParam === 'true';
+  const mentionUnderline = mentionUnderlineParam === '1' || mentionUnderlineParam === 'true';
+  const mentionUppercase = mentionUppercaseParam === '1' || mentionUppercaseParam === 'true';
+  const userCapitalizeFirst = userCapitalizeFirstParam === '1' || userCapitalizeFirstParam === 'true';
 
   if (fontSize) {
     document.documentElement.style.setProperty('--chat-font-size', `${fontSize}px`);
@@ -114,6 +126,13 @@ export function mountApp() {
   document.documentElement.style.setProperty('--user-text-style', userTextItalic ? 'italic' : 'normal');
   document.documentElement.style.setProperty('--user-text-decoration', userTextUnderline ? 'underline' : 'none');
   document.documentElement.style.setProperty('--user-text-transform', userTextUppercase ? 'uppercase' : 'none');
+  
+  // Apply mention styles (always enabled)
+  document.documentElement.style.setProperty('--mention-color', mentionColor);
+  document.documentElement.style.setProperty('--mention-weight', mentionBold ? 'bold' : 'normal');
+  document.documentElement.style.setProperty('--mention-style', mentionItalic ? 'italic' : 'normal');
+  document.documentElement.style.setProperty('--mention-decoration', mentionUnderline ? 'underline' : 'none');
+  document.documentElement.style.setProperty('--mention-transform', mentionUppercase ? 'uppercase' : 'none');
 
   // Expose a tiny runtime config for pages (optional)
   window.__ducchatInterface = { fontSize, limit, showStreamer, userColors, emoteRadius, stacked, msgPad, msgTimeout, frameRed, frameBgColor };
