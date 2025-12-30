@@ -201,6 +201,7 @@ export function HomePage() {
       if (cfg.frameShadowBlur > 0) {
         u.searchParams.set('frameShadowBlur', String(cfg.frameShadowBlur));
         if (cfg.frameShadowColor) u.searchParams.set('frameShadowColor', cfg.frameShadowColor);
+        if (cfg.frameShadowOpacity !== undefined) u.searchParams.set('frameShadowOpacity', String(cfg.frameShadowOpacity));
       }
       if (cfg.frameTextColor) u.searchParams.set('frameTextColor', cfg.frameTextColor);
       if (cfg.frameTextBold) u.searchParams.set('frameTextBold', '1');
@@ -540,7 +541,7 @@ export function HomePage() {
     const stacked = check('Message sous le pseudo');
     const frameRed = check('Activer CSS');
     const frameBgColor = colorInput('#000000');
-    const frameBorderWidth = numInput('2', 0, 20);
+    const frameBorderWidth = numInput('0', 0, 20);
     frameBorderWidth.step = '1';
     const frameBorderColor = colorInput('#ff0000');
     const frameBorderRadius = numInput('0', 0, 50);
@@ -550,6 +551,8 @@ export function HomePage() {
     const frameShadowBlur = numInput('0', 0, 50);
     frameShadowBlur.step = '1';
     const frameShadowColor = colorInput('#000000');
+    const frameShadowOpacity = numInput('100', 0, 100);
+    frameShadowOpacity.step = '1';
     const frameTextColor = colorInput('#ffffff');
     const frameTextBold = check('Gras');
     const frameTextItalic = check('Italique');
@@ -618,6 +621,7 @@ export function HomePage() {
       if (typeof saved.framePadding === 'number') framePadding.value = String(saved.framePadding);
       if (typeof saved.frameShadowBlur === 'number') frameShadowBlur.value = String(saved.frameShadowBlur);
       if (typeof saved.frameShadowColor === 'string') frameShadowColor.value = saved.frameShadowColor;
+      if (typeof saved.frameShadowOpacity === 'number') frameShadowOpacity.value = String(saved.frameShadowOpacity);
       if (typeof saved.frameTextColor === 'string') frameTextColor.value = saved.frameTextColor;
       if (typeof saved.frameTextBold === 'boolean') frameTextBold.input.checked = saved.frameTextBold;
       if (typeof saved.frameTextItalic === 'boolean') frameTextItalic.input.checked = saved.frameTextItalic;
@@ -801,12 +805,13 @@ export function HomePage() {
         stacked: !!stacked.input.checked,
         frameRed: !!frameRed.input.checked,
         frameBgColor: frameBgColor.value || '#000000',
-        frameBorderWidth: Number(frameBorderWidth.value) || 2,
+        frameBorderWidth: Number(frameBorderWidth.value) || 0,
         frameBorderColor: frameBorderColor.value || '#ff0000',
         frameBorderRadius: Number(frameBorderRadius.value) || 0,
         framePadding: Number(framePadding.value) || 0.3,
         frameShadowBlur: Number(frameShadowBlur.value) || 0,
         frameShadowColor: frameShadowColor.value || '#000000',
+        frameShadowOpacity: Number(frameShadowOpacity.value) || 100,
         frameTextColor: frameTextColor.value || '#ffffff',
         frameTextBold: !!frameTextBold.input.checked,
         frameTextItalic: !!frameTextItalic.input.checked,
@@ -869,7 +874,14 @@ export function HomePage() {
         document.documentElement.style.setProperty('--frame-padding', `${cfg.framePadding}em`);
         if (cfg.frameShadowBlur > 0) {
           const shadowColor = cfg.frameShadowColor || '#000000';
-          document.documentElement.style.setProperty('--frame-shadow', `inset 0 0 ${cfg.frameShadowBlur}px ${shadowColor}`);
+          const opacity = (cfg.frameShadowOpacity !== undefined ? cfg.frameShadowOpacity : 100) / 100;
+          // Convert hex to rgba
+          const hex = shadowColor.replace('#', '');
+          const r = parseInt(hex.substring(0, 2), 16);
+          const g = parseInt(hex.substring(2, 4), 16);
+          const b = parseInt(hex.substring(4, 6), 16);
+          const rgbaColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+          document.documentElement.style.setProperty('--frame-shadow', `inset 0 0 ${cfg.frameShadowBlur}px ${rgbaColor}`);
         } else {
           document.documentElement.style.removeProperty('--frame-shadow');
         }
@@ -979,6 +991,7 @@ export function HomePage() {
         framePadding: cfg.framePadding,
         frameShadowBlur: cfg.frameShadowBlur,
         frameShadowColor: cfg.frameShadowColor,
+        frameShadowOpacity: cfg.frameShadowOpacity,
         frameTextColor: cfg.frameTextColor,
         frameTextBold: cfg.frameTextBold,
         frameTextItalic: cfg.frameTextItalic,
@@ -1025,6 +1038,7 @@ export function HomePage() {
       framePadding,
       frameShadowBlur,
       frameShadowColor,
+      frameShadowOpacity,
       frameTextColor,
       frameTextBold.input,
       frameTextItalic.input,
@@ -1175,7 +1189,10 @@ export function HomePage() {
     const rowFrameShadow = document.createElement('div');
     rowFrameShadow.className = 'styleGrid__row';
     rowFrameShadow.append(name('Blur'), frameShadowBlur, name('Couleur'), frameShadowColor);
-    sectionShadow.append(sectionShadowTitle, rowFrameShadow);
+    const rowFrameShadowOpacity = document.createElement('div');
+    rowFrameShadowOpacity.className = 'styleGrid__row';
+    rowFrameShadowOpacity.append(name('Opacité (%)'), frameShadowOpacity, document.createElement('div'), document.createElement('div'));
+    sectionShadow.append(sectionShadowTitle, rowFrameShadow, rowFrameShadowOpacity);
     
     // Section: Texte
     const sectionText = document.createElement('div');

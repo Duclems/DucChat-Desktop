@@ -28,6 +28,7 @@ export function mountApp() {
   const framePaddingParam = Number(params.get('framePadding'));
   const frameShadowBlurParam = Number(params.get('frameShadowBlur'));
   const frameShadowColorParam = params.get('frameShadowColor');
+  const frameShadowOpacityParam = Number(params.get('frameShadowOpacity'));
   const frameTextColorParam = params.get('frameTextColor');
   const frameTextBoldParam = params.get('frameTextBold');
   const frameTextItalicParam = params.get('frameTextItalic');
@@ -67,12 +68,13 @@ export function mountApp() {
     Number.isFinite(msgTimeoutParam) && msgTimeoutParam >= 0 && msgTimeoutParam <= 300 ? msgTimeoutParam : null;
   const frameRed = frameRedParam === '1' || frameRedParam === 'true';
   const frameBgColor = frameBgColorParam && /^#[0-9A-Fa-f]{6}$/.test(frameBgColorParam) ? frameBgColorParam : null;
-  const frameBorderWidth = Number.isFinite(frameBorderWidthParam) && frameBorderWidthParam >= 0 && frameBorderWidthParam <= 20 ? Math.floor(frameBorderWidthParam) : 2;
+  const frameBorderWidth = Number.isFinite(frameBorderWidthParam) && frameBorderWidthParam >= 0 && frameBorderWidthParam <= 20 ? Math.floor(frameBorderWidthParam) : 0;
   const frameBorderColor = frameBorderColorParam && /^#[0-9A-Fa-f]{6}$/.test(frameBorderColorParam) ? frameBorderColorParam : '#ff0000';
   const frameBorderRadius = Number.isFinite(frameBorderRadiusParam) && frameBorderRadiusParam >= 0 && frameBorderRadiusParam <= 50 ? Math.floor(frameBorderRadiusParam) : 0;
   const framePadding = Number.isFinite(framePaddingParam) && framePaddingParam >= 0 && framePaddingParam <= 2 ? framePaddingParam : 0.3;
   const frameShadowBlur = Number.isFinite(frameShadowBlurParam) && frameShadowBlurParam >= 0 && frameShadowBlurParam <= 50 ? Math.floor(frameShadowBlurParam) : 0;
   const frameShadowColor = frameShadowColorParam && /^#[0-9A-Fa-f]{6}$/.test(frameShadowColorParam) ? frameShadowColorParam : '#000000';
+  const frameShadowOpacity = Number.isFinite(frameShadowOpacityParam) && frameShadowOpacityParam >= 0 && frameShadowOpacityParam <= 100 ? frameShadowOpacityParam : 100;
   const frameTextColor = frameTextColorParam && /^#[0-9A-Fa-f]{6}$/.test(frameTextColorParam) ? frameTextColorParam : '#ffffff';
   const frameTextBold = frameTextBoldParam === '1' || frameTextBoldParam === 'true';
   const frameTextItalic = frameTextItalicParam === '1' || frameTextItalicParam === 'true';
@@ -112,7 +114,14 @@ export function mountApp() {
     }
     document.documentElement.style.setProperty('--frame-padding', `${framePadding}em`);
     if (frameShadowBlur > 0) {
-      document.documentElement.style.setProperty('--frame-shadow', `inset 0 0 ${frameShadowBlur}px ${frameShadowColor}`);
+      const opacity = frameShadowOpacity / 100;
+      // Convert hex to rgba
+      const hex = frameShadowColor.replace('#', '');
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      const rgbaColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+      document.documentElement.style.setProperty('--frame-shadow', `inset 0 0 ${frameShadowBlur}px ${rgbaColor}`);
     }
     document.documentElement.style.setProperty('--frame-text-color', frameTextColor);
     document.documentElement.style.setProperty('--frame-text-weight', frameTextBold ? 'bold' : 'normal');
