@@ -1,3 +1,10 @@
+import { renderMessage } from '../components/MessageRenderer';
+import { createChatLog, applyTimeoutToMessage } from '../components/ChatLog';
+import { createExamplePreview, createExampleRow } from '../components/ExamplePreview';
+import { normUserKey, fallbackUserColor } from '../utils/messageUtils';
+import { getInterfaceConfig, loadPreviewStyle, savePreviewStyle } from '../utils/styleUtils';
+import { buildInterfaceUrl } from '../utils/urlBuilder';
+
 export function HomePage() {
   const wrap = document.createElement('div');
   wrap.className = 'card';
@@ -8,10 +15,6 @@ export function HomePage() {
   /** @type {{blocked: string[], renames: Record<string,string>}} */
   let pseudosCfg = { blocked: [], renames: {} };
   let blockedSet = new Set();
-
-  function normUserKey(x) {
-    return String(x || '').trim().toLowerCase();
-  }
 
   function setPseudosCfg(next) {
     const cfg = next && typeof next === 'object' ? next : {};
@@ -64,40 +67,6 @@ export function HomePage() {
     }
   }
 
-  function loadPreviewStyle() {
-    try {
-      return JSON.parse(localStorage.getItem('ducchat.homeStyle') || 'null') || null;
-    } catch {
-      return null;
-    }
-  }
-
-  function savePreviewStyle(style) {
-    localStorage.setItem('ducchat.homeStyle', JSON.stringify(style));
-  }
-
-  function hashString(str) {
-    // Fast deterministic hash (FNV-1a)
-    let h = 2166136261;
-    for (let i = 0; i < str.length; i++) {
-      h ^= str.charCodeAt(i);
-      h = Math.imul(h, 16777619);
-    }
-    return h >>> 0;
-  }
-
-  function fallbackUserColor(user) {
-    const key = String(user || '').toLowerCase();
-    if (!key) return 'hsl(210 85% 70%)';
-    const cached = userColorCache.get(key);
-    if (cached) return cached;
-
-    const hue = hashString(key) % 360;
-    // Bright & readable on dark background
-    const color = `hsl(${hue} 85% 70%)`;
-    userColorCache.set(key, color);
-    return color;
-  }
 
   const h2Container = document.createElement('div');
   h2Container.style.display = 'flex';
@@ -113,31 +82,8 @@ export function HomePage() {
   meta.className = 'muted';
   meta.textContent = 'Aucune chaîne configurée. Va dans Settings.';
 
-  const log = document.createElement('div');
-  log.className = 'chatLog';
-
+  const log = createChatLog();
   const messages = [];
-  const MAX_DEFAULT = 200;
-
-  function getInterfaceConfig() {
-    const base = window.__ducchatInterface || {};
-    const override = (!isOverlay && window.__ducchatInterfaceOverrides) ? window.__ducchatInterfaceOverrides : {};
-    const cfg = { ...base, ...override };
-
-    const limit = Number.isFinite(cfg.limit) ? cfg.limit : MAX_DEFAULT;
-    const userColors = cfg.userColors !== false;
-    const userColor = cfg.userColor || null;
-    const userCapitalizeFirst = cfg.userCapitalizeFirst === true;
-    const frameTextCapitalizeFirst = cfg.frameTextCapitalizeFirst === true;
-    const stacked = cfg.stacked === true;
-    const msgTimeout = Number.isFinite(cfg.msgTimeout) && cfg.msgTimeout >= 0 ? cfg.msgTimeout : null;
-    return { limit, userColors, userColor, userCapitalizeFirst, frameTextCapitalizeFirst, stacked, msgTimeout };
-  }
-
-  // In HTTP/overlay mode we don't run the preview panel, so we must apply interface classes here.
-  // Compact is always enabled by default
-  log.classList.add('chatLog--compact');
-  log.classList.toggle('chatLog--stacked', getInterfaceConfig().stacked);
 
   function applyStyleToPreview({ fontSize }) {
     if (typeof fontSize === 'number') {
@@ -179,56 +125,7 @@ export function HomePage() {
     return `${window.location.origin}/`;
   }
 
-  function buildInterfaceUrl(baseUrl, cfg) {
-    const u = new URL(baseUrl);
-    u.searchParams.set('overlay', '1');
-    if (cfg.fontSize) u.searchParams.set('fontSize', String(cfg.fontSize));
-    if (cfg.limit) u.searchParams.set('limit', String(cfg.limit));
-    u.searchParams.set('showStreamer', '1'); // Always show streamer messages
-    u.searchParams.set('userColors', cfg.userColors ? '1' : '0');
-    u.searchParams.set('compact', '1'); // Compact is always enabled
-    if (cfg.emoteRadius && cfg.emoteRadius > 0) u.searchParams.set('emoteRadius', String(cfg.emoteRadius));
-    if (cfg.stacked) u.searchParams.set('stacked', '1');
-    if (typeof cfg.msgPad === 'number') u.searchParams.set('msgPad', String(cfg.msgPad));
-    if (typeof cfg.msgTimeout === 'number' && cfg.msgTimeout > 0) u.searchParams.set('msgTimeout', String(cfg.msgTimeout));
-    if (cfg.frameRed) {
-      u.searchParams.set('frameRed', '1');
-      if (cfg.frameBgColor) u.searchParams.set('frameBgColor', cfg.frameBgColor);
-      if (cfg.frameBorderWidth) u.searchParams.set('frameBorderWidth', String(cfg.frameBorderWidth));
-      if (cfg.frameBorderColor) u.searchParams.set('frameBorderColor', cfg.frameBorderColor);
-      if (cfg.frameBorderRadius) u.searchParams.set('frameBorderRadius', String(cfg.frameBorderRadius));
-      if (cfg.framePadding) u.searchParams.set('framePadding', String(cfg.framePadding));
-      if (cfg.frameShadowBlur > 0) {
-        u.searchParams.set('frameShadowBlur', String(cfg.frameShadowBlur));
-        if (cfg.frameShadowColor) u.searchParams.set('frameShadowColor', cfg.frameShadowColor);
-        if (cfg.frameShadowOpacity !== undefined) u.searchParams.set('frameShadowOpacity', String(cfg.frameShadowOpacity));
-      }
-      if (cfg.frameTextColor) u.searchParams.set('frameTextColor', cfg.frameTextColor);
-      if (cfg.frameTextBold) u.searchParams.set('frameTextBold', '1');
-      if (cfg.frameTextItalic) u.searchParams.set('frameTextItalic', '1');
-      if (cfg.frameTextUnderline) u.searchParams.set('frameTextUnderline', '1');
-      if (cfg.frameTextUppercase) u.searchParams.set('frameTextUppercase', '1');
-      if (cfg.frameTextCapitalizeFirst) u.searchParams.set('frameTextCapitalizeFirst', '1');
-      if (cfg.userColor) u.searchParams.set('userColor', cfg.userColor);
-      if (cfg.userTextBold) u.searchParams.set('userTextBold', '1');
-      if (cfg.userTextItalic) u.searchParams.set('userTextItalic', '1');
-      if (cfg.userTextUnderline) u.searchParams.set('userTextUnderline', '1');
-      if (cfg.userTextUppercase) u.searchParams.set('userTextUppercase', '1');
-      if (cfg.userCapitalizeFirst) u.searchParams.set('userCapitalizeFirst', '1');
-      if (cfg.mentionColor) u.searchParams.set('mentionColor', cfg.mentionColor);
-      if (cfg.mentionBold) u.searchParams.set('mentionBold', '1');
-      if (cfg.mentionItalic) u.searchParams.set('mentionItalic', '1');
-      if (cfg.mentionUnderline) u.searchParams.set('mentionUnderline', '1');
-      if (cfg.mentionUppercase) u.searchParams.set('mentionUppercase', '1');
-      if (cfg.msgWidthType) u.searchParams.set('msgWidthType', cfg.msgWidthType);
-      if (cfg.msgWidthType === 'fixed' && cfg.msgWidthValue) u.searchParams.set('msgWidthValue', String(cfg.msgWidthValue));
-      if (cfg.msgAlign) u.searchParams.set('msgAlign', cfg.msgAlign);
-    }
-    u.hash = '#/';
-    return u.toString();
-  }
-
-  function renderMessage(m) {
+  function renderMessageLocal(m) {
     const origUser = String(m.user || 'unknown');
     const userKey = normUserKey(origUser);
     let displayUser = pseudosCfg.renames?.[userKey] || origUser;
@@ -324,7 +221,7 @@ export function HomePage() {
     return row;
   }
 
-  function applyTimeoutToMessage(row, msgTimeout, messageObj) {
+  function applyTimeoutToMessageLocal(row, msgTimeout, messageObj) {
     if (!row || !row.parentNode) return;
     
     // Clear any existing timeout
@@ -363,14 +260,14 @@ export function HomePage() {
     const { limit, msgTimeout } = getInterfaceConfig();
     messages.push(m);
     if (messages.length > limit) messages.shift();
-    const row = renderMessage(m);
+    const row = renderMessage(m, pseudosCfg);
     
     log.append(row);
     if (log.childNodes.length > limit) log.removeChild(log.firstChild);
     log.scrollTop = log.scrollHeight;
     
     // Apply timeout
-    applyTimeoutToMessage(row, msgTimeout, m);
+    applyTimeoutToMessageLocal(row, msgTimeout, m);
   }
 
   function enforceLimitNow() {
@@ -668,98 +565,8 @@ export function HomePage() {
     urlRow.append(urlLabel, urlInput, copyBtn);
 
     // Example preview of message rendering
-    const exampleWrap = document.createElement('div');
-    exampleWrap.className = 'examplePreview';
-    const exampleLabelRow = document.createElement('div');
-    exampleLabelRow.style.display = 'flex';
-    exampleLabelRow.style.justifyContent = 'space-between';
-    exampleLabelRow.style.alignItems = 'center';
-    exampleLabelRow.style.marginBottom = 'var(--space-8)';
-    const exampleLabel = document.createElement('div');
-    exampleLabel.className = 'examplePreview__label';
-    exampleLabel.textContent = 'Exemple de rendu:';
-    const testBtn = document.createElement('button');
-    testBtn.className = 'btn btn--ghost';
-    testBtn.type = 'button';
-    testBtn.textContent = 'Test';
-    testBtn.style.fontSize = '12px';
-    testBtn.style.padding = '0.3em 0.8em';
-    exampleLabelRow.append(exampleLabel, testBtn);
-    const exampleLog = document.createElement('div');
-    exampleLog.className = 'chatLog examplePreview__log';
-    exampleLog.style.height = 'auto';
-    exampleLog.style.maxHeight = '120px';
-    exampleLog.style.marginTop = 'var(--space-8)';
+    const { container: exampleWrap, log: exampleLog, testBtn } = createExamplePreview();
 
-    function createExampleRow(userName, textContent, emotes = []) {
-      const { userColors, userColor: customUserColor, userCapitalizeFirst, frameTextCapitalizeFirst } = getInterfaceConfig();
-      
-      let displayName = userName;
-      if (userCapitalizeFirst && displayName.length > 0) {
-        displayName = displayName.charAt(0).toUpperCase() + displayName.slice(1).toLowerCase();
-      }
-      
-      const row = document.createElement('div');
-      row.className = 'chatMsg';
-
-      const user = document.createElement('span');
-      user.className = 'chatMsg__user';
-      user.textContent = `${displayName} :`;
-      if (userColors) {
-        // In example, simulate Twitch color with random color
-        row.style.setProperty('--user-color', fallbackUserColor(userName));
-      } else if (customUserColor) {
-        row.style.setProperty('--user-color', customUserColor);
-      } else {
-        row.style.removeProperty('--user-color');
-      }
-
-      const content = document.createElement('span');
-      content.className = 'chatMsg__text';
-      
-      // Parse mentions in example text (before emotes)
-      const mentionRegex = /(@[a-zA-Z0-9_]+)/g;
-      const parts = textContent.split(mentionRegex);
-      const frag = document.createDocumentFragment();
-      let foundFirstLetter = false;
-      for (const part of parts) {
-        if (part.startsWith('@')) {
-          const mentionName = part.slice(1);
-          const mentionSpan = document.createElement('span');
-          mentionSpan.className = 'chatMsg__mention';
-          mentionSpan.textContent = part;
-          frag.append(mentionSpan);
-        } else if (part) {
-          let text = part;
-          // Capitalize first letter of first word if option is enabled and we haven't found it yet
-          if (frameTextCapitalizeFirst && !foundFirstLetter && text.length > 0) {
-            const firstLetterIndex = text.search(/[a-zA-Z]/);
-            if (firstLetterIndex !== -1) {
-              text = text.slice(0, firstLetterIndex) + text.charAt(firstLetterIndex).toUpperCase() + text.slice(firstLetterIndex + 1);
-              foundFirstLetter = true;
-            }
-          }
-          frag.append(document.createTextNode(text));
-        }
-      }
-      
-      // Add emotes after text
-      for (const emoteUrl of emotes) {
-        const emote = document.createElement('img');
-        emote.className = 'chatEmote';
-        emote.src = emoteUrl;
-        emote.alt = 'Emote';
-        emote.title = 'Emote';
-        emote.loading = 'lazy';
-        emote.decoding = 'async';
-        frag.append(' ', emote);
-      }
-      
-      content.append(frag);
-
-      row.append(user, content);
-      return row;
-    }
 
     function renderExampleMessage() {
       exampleLog.replaceChildren();
@@ -776,7 +583,8 @@ export function HomePage() {
         [
           'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_32a19dbdb8ef4e09b13a9f239ffe910d/default/dark/4.0',
           'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_72e02b2fb5af423f91f076f723034ff7/default/dark/4.0',
-        ]
+        ],
+        userColorCache
       );
 
       const row2 = createExampleRow(
@@ -784,7 +592,8 @@ export function HomePage() {
         'Un deuxième message avec @ExempleUser pour voir le rendu',
         [
           'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_eb49980ac4ea4585a7a0a7e5ae291fd7/default/dark/4.0',
-        ]
+        ],
+        userColorCache
       );
 
       exampleLog.append(row1, row2);
@@ -1327,7 +1136,6 @@ export function HomePage() {
     h2Container.append(h2, urlRow);
     
     wrap.append(h2Container, meta, panel, tabsContainer, contentContainer);
-    exampleWrap.append(exampleLabelRow, exampleLog);
     
     // Test button functionality
     testBtn.addEventListener('click', () => {
@@ -1337,7 +1145,8 @@ export function HomePage() {
         'Message de test avec timeout',
         [
           'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_32a19dbdb8ef4e09b13a9f239ffe910d/default/dark/4.0',
-        ]
+        ],
+        userColorCache
       );
       
       exampleLog.append(testRow);
