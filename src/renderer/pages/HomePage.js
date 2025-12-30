@@ -42,7 +42,7 @@ export function HomePage() {
         const orig = row?.dataset?.origuser || '';
         const display = (orig && renames[normUserKey(orig)]) ? renames[normUserKey(orig)] : (orig || '');
         const userEl = row.querySelector?.('.chatMsg__user');
-        if (userEl && display) userEl.textContent = `${display}:`;
+        if (userEl && display) userEl.textContent = `${display} :`;
       }
       // If stacked, re-measure indent after any rename changes
       if (getInterfaceConfig().stacked) {
@@ -122,9 +122,10 @@ export function HomePage() {
 
     const limit = Number.isFinite(cfg.limit) ? cfg.limit : MAX_DEFAULT;
     const userColors = cfg.userColors !== false;
+    const userColor = cfg.userColor || null;
     const stacked = cfg.stacked === true;
     const msgTimeout = Number.isFinite(cfg.msgTimeout) && cfg.msgTimeout >= 0 ? cfg.msgTimeout : null;
-    return { limit, userColors, stacked, msgTimeout };
+    return { limit, userColors, userColor, stacked, msgTimeout };
   }
 
   // In HTTP/overlay mode we don't run the preview panel, so we must apply interface classes here.
@@ -190,6 +191,7 @@ export function HomePage() {
       if (cfg.frameBorderWidth) u.searchParams.set('frameBorderWidth', String(cfg.frameBorderWidth));
       if (cfg.frameBorderColor) u.searchParams.set('frameBorderColor', cfg.frameBorderColor);
       if (cfg.frameBorderRadius) u.searchParams.set('frameBorderRadius', String(cfg.frameBorderRadius));
+      if (cfg.framePadding) u.searchParams.set('framePadding', String(cfg.framePadding));
       if (cfg.frameShadowBlur > 0) {
         u.searchParams.set('frameShadowBlur', String(cfg.frameShadowBlur));
         if (cfg.frameShadowColor) u.searchParams.set('frameShadowColor', cfg.frameShadowColor);
@@ -198,8 +200,12 @@ export function HomePage() {
       if (cfg.frameTextBold) u.searchParams.set('frameTextBold', '1');
       if (cfg.frameTextItalic) u.searchParams.set('frameTextItalic', '1');
       if (cfg.frameTextUnderline) u.searchParams.set('frameTextUnderline', '1');
-      if (cfg.frameTextStrikethrough) u.searchParams.set('frameTextStrikethrough', '1');
       if (cfg.frameTextUppercase) u.searchParams.set('frameTextUppercase', '1');
+      if (cfg.userColor) u.searchParams.set('userColor', cfg.userColor);
+      if (cfg.userTextBold) u.searchParams.set('userTextBold', '1');
+      if (cfg.userTextItalic) u.searchParams.set('userTextItalic', '1');
+      if (cfg.userTextUnderline) u.searchParams.set('userTextUnderline', '1');
+      if (cfg.userTextUppercase) u.searchParams.set('userTextUppercase', '1');
     }
     u.hash = '#/';
     return u.toString();
@@ -217,11 +223,27 @@ export function HomePage() {
 
     const user = document.createElement('span');
     user.className = 'chatMsg__user';
-    user.textContent = `${displayUser}:`;
-    const { userColors } = getInterfaceConfig();
+    user.textContent = `${displayUser} :`;
+    const { userColors, userColor: customUserColor } = getInterfaceConfig();
     if (userColors) {
       const c = String(m.userColor || '').trim();
-      row.style.setProperty('--user-color', c || fallbackUserColor(origUser));
+      if (c) {
+        // Use Twitch color if available
+        row.style.setProperty('--user-color', c);
+      } else if (customUserColor) {
+        // Use custom color if set
+        row.style.setProperty('--user-color', customUserColor);
+      } else {
+        // Use default title color
+        row.style.removeProperty('--user-color');
+      }
+    } else {
+      // If userColors is disabled, use custom color or default
+      if (customUserColor) {
+        row.style.setProperty('--user-color', customUserColor);
+      } else {
+        row.style.removeProperty('--user-color');
+      }
     }
 
     const content = document.createElement('span');
@@ -404,7 +426,6 @@ export function HomePage() {
       { value: 'display', label: 'Affichage' },
       { value: 'messages', label: 'Messages' },
       { value: 'emotes', label: 'Emotes' },
-      { value: 'colors', label: 'Couleurs' },
       { value: 'visual', label: 'Style visuel' },
     ];
     categories.forEach((cat) => {
@@ -471,6 +492,8 @@ export function HomePage() {
     const frameBorderColor = colorInput('#ff0000');
     const frameBorderRadius = numInput('0', 0, 50);
     frameBorderRadius.step = '1';
+    const framePadding = numInput('0.3', 0, 2);
+    framePadding.step = '0.1';
     const frameShadowBlur = numInput('0', 0, 50);
     frameShadowBlur.step = '1';
     const frameShadowColor = colorInput('#000000');
@@ -478,8 +501,12 @@ export function HomePage() {
     const frameTextBold = check('Gras');
     const frameTextItalic = check('Italique');
     const frameTextUnderline = check('Souligné');
-    const frameTextStrikethrough = check('Barré');
     const frameTextUppercase = check('Majuscules');
+    const userTextBold = check('Gras');
+    const userTextItalic = check('Italique');
+    const userTextUnderline = check('Souligné');
+    const userTextUppercase = check('Majuscules');
+    const userColor = colorInput('#e5e5e4');
 
     userColors.input.checked = true;
 
@@ -498,14 +525,19 @@ export function HomePage() {
       if (typeof saved.frameBorderWidth === 'number') frameBorderWidth.value = String(saved.frameBorderWidth);
       if (typeof saved.frameBorderColor === 'string') frameBorderColor.value = saved.frameBorderColor;
       if (typeof saved.frameBorderRadius === 'number') frameBorderRadius.value = String(saved.frameBorderRadius);
+      if (typeof saved.framePadding === 'number') framePadding.value = String(saved.framePadding);
       if (typeof saved.frameShadowBlur === 'number') frameShadowBlur.value = String(saved.frameShadowBlur);
       if (typeof saved.frameShadowColor === 'string') frameShadowColor.value = saved.frameShadowColor;
       if (typeof saved.frameTextColor === 'string') frameTextColor.value = saved.frameTextColor;
       if (typeof saved.frameTextBold === 'boolean') frameTextBold.input.checked = saved.frameTextBold;
       if (typeof saved.frameTextItalic === 'boolean') frameTextItalic.input.checked = saved.frameTextItalic;
       if (typeof saved.frameTextUnderline === 'boolean') frameTextUnderline.input.checked = saved.frameTextUnderline;
-      if (typeof saved.frameTextStrikethrough === 'boolean') frameTextStrikethrough.input.checked = saved.frameTextStrikethrough;
       if (typeof saved.frameTextUppercase === 'boolean') frameTextUppercase.input.checked = saved.frameTextUppercase;
+      if (typeof saved.userColor === 'string') userColor.value = saved.userColor;
+      if (typeof saved.userTextBold === 'boolean') userTextBold.input.checked = saved.userTextBold;
+      if (typeof saved.userTextItalic === 'boolean') userTextItalic.input.checked = saved.userTextItalic;
+      if (typeof saved.userTextUnderline === 'boolean') userTextUnderline.input.checked = saved.userTextUnderline;
+      if (typeof saved.userTextUppercase === 'boolean') userTextUppercase.input.checked = saved.userTextUppercase;
     }
 
     const urlRow = document.createElement('div');
@@ -547,16 +579,21 @@ export function HomePage() {
     exampleLog.style.marginTop = 'var(--space-8)';
 
     function createExampleRow(userName, textContent, emotes = []) {
-      const { userColors } = getInterfaceConfig();
+      const { userColors, userColor: customUserColor } = getInterfaceConfig();
       
       const row = document.createElement('div');
       row.className = 'chatMsg';
 
       const user = document.createElement('span');
       user.className = 'chatMsg__user';
-      user.textContent = `${userName}:`;
+      user.textContent = `${userName} :`;
       if (userColors) {
+        // In example, simulate Twitch color with random color
         row.style.setProperty('--user-color', fallbackUserColor(userName));
+      } else if (customUserColor) {
+        row.style.setProperty('--user-color', customUserColor);
+      } else {
+        row.style.removeProperty('--user-color');
       }
 
       const content = document.createElement('span');
@@ -625,14 +662,19 @@ export function HomePage() {
         frameBorderWidth: Number(frameBorderWidth.value) || 2,
         frameBorderColor: frameBorderColor.value || '#ff0000',
         frameBorderRadius: Number(frameBorderRadius.value) || 0,
+        framePadding: Number(framePadding.value) || 0.3,
         frameShadowBlur: Number(frameShadowBlur.value) || 0,
         frameShadowColor: frameShadowColor.value || '#000000',
         frameTextColor: frameTextColor.value || '#ffffff',
         frameTextBold: !!frameTextBold.input.checked,
         frameTextItalic: !!frameTextItalic.input.checked,
         frameTextUnderline: !!frameTextUnderline.input.checked,
-        frameTextStrikethrough: !!frameTextStrikethrough.input.checked,
         frameTextUppercase: !!frameTextUppercase.input.checked,
+        userColor: userColor.value || '#e5e5e4',
+        userTextBold: !!userTextBold.input.checked,
+        userTextItalic: !!userTextItalic.input.checked,
+        userTextUnderline: !!userTextUnderline.input.checked,
+        userTextUppercase: !!userTextUppercase.input.checked,
       };
 
       // Apply preview + hook runtime config
@@ -669,6 +711,7 @@ export function HomePage() {
         } else {
           document.documentElement.style.removeProperty('--frame-border-radius');
         }
+        document.documentElement.style.setProperty('--frame-padding', `${cfg.framePadding}em`);
         if (cfg.frameShadowBlur > 0) {
           const shadowColor = cfg.frameShadowColor || '#000000';
           document.documentElement.style.setProperty('--frame-shadow', `inset 0 0 ${cfg.frameShadowBlur}px ${shadowColor}`);
@@ -678,15 +721,26 @@ export function HomePage() {
         document.documentElement.style.setProperty('--frame-text-color', cfg.frameTextColor);
         document.documentElement.style.setProperty('--frame-text-weight', cfg.frameTextBold ? 'bold' : 'normal');
         document.documentElement.style.setProperty('--frame-text-style', cfg.frameTextItalic ? 'italic' : 'normal');
-        let textDecoration = [];
-        if (cfg.frameTextUnderline) textDecoration.push('underline');
-        if (cfg.frameTextStrikethrough) textDecoration.push('line-through');
-        document.documentElement.style.setProperty('--frame-text-decoration', textDecoration.length > 0 ? textDecoration.join(' ') : 'none');
+        document.documentElement.style.setProperty('--frame-text-decoration', cfg.frameTextUnderline ? 'underline' : 'none');
         document.documentElement.style.setProperty('--frame-text-transform', cfg.frameTextUppercase ? 'uppercase' : 'none');
+      }
+      
+      // Apply user (pseudo) styles
+      if (cfg.userColor) {
+        document.documentElement.style.setProperty('--user-default-color', cfg.userColor);
       } else {
+        document.documentElement.style.removeProperty('--user-default-color');
+      }
+      document.documentElement.style.setProperty('--user-text-weight', cfg.userTextBold ? 'bold' : 'normal');
+      document.documentElement.style.setProperty('--user-text-style', cfg.userTextItalic ? 'italic' : 'normal');
+      document.documentElement.style.setProperty('--user-text-decoration', cfg.userTextUnderline ? 'underline' : 'none');
+      document.documentElement.style.setProperty('--user-text-transform', cfg.userTextUppercase ? 'uppercase' : 'none');
+      
+      if (!cfg.frameRed) {
         document.body.classList.remove('hasFrameRed');
         document.documentElement.style.removeProperty('--frame-bg-color');
         document.documentElement.style.removeProperty('--frame-border-width');
+        document.documentElement.style.removeProperty('--frame-padding');
         document.documentElement.style.removeProperty('--frame-border-color');
         document.documentElement.style.removeProperty('--frame-border-radius');
         document.documentElement.style.removeProperty('--frame-shadow');
@@ -711,14 +765,19 @@ export function HomePage() {
         frameBorderWidth: cfg.frameBorderWidth,
         frameBorderColor: cfg.frameBorderColor,
         frameBorderRadius: cfg.frameBorderRadius,
+        framePadding: cfg.framePadding,
         frameShadowBlur: cfg.frameShadowBlur,
         frameShadowColor: cfg.frameShadowColor,
         frameTextColor: cfg.frameTextColor,
         frameTextBold: cfg.frameTextBold,
         frameTextItalic: cfg.frameTextItalic,
         frameTextUnderline: cfg.frameTextUnderline,
-        frameTextStrikethrough: cfg.frameTextStrikethrough,
         frameTextUppercase: cfg.frameTextUppercase,
+        userColor: cfg.userColor,
+        userTextBold: cfg.userTextBold,
+        userTextItalic: cfg.userTextItalic,
+        userTextUnderline: cfg.userTextUnderline,
+        userTextUppercase: cfg.userTextUppercase,
       });
 
       const baseUrl = await getBaseUrl();
@@ -742,14 +801,19 @@ export function HomePage() {
       frameBorderWidth,
       frameBorderColor,
       frameBorderRadius,
+      framePadding,
       frameShadowBlur,
       frameShadowColor,
       frameTextColor,
       frameTextBold.input,
       frameTextItalic.input,
       frameTextUnderline.input,
-      frameTextStrikethrough.input,
       frameTextUppercase.input,
+      userColor,
+      userTextBold.input,
+      userTextItalic.input,
+      userTextUnderline.input,
+      userTextUppercase.input,
     ];
     inputs.forEach((el) => el.addEventListener('input', () => update()));
     inputs.forEach((el) => el.addEventListener('change', () => update()));
@@ -772,7 +836,6 @@ export function HomePage() {
       display: document.createElement('div'),
       messages: document.createElement('div'),
       emotes: document.createElement('div'),
-      colors: document.createElement('div'),
       visual: document.createElement('div'),
     };
 
@@ -800,32 +863,122 @@ export function HomePage() {
     rowEmotes.append(name('Emote'), emoteRadius, roundEmotes.label, document.createElement('div'));
     categoryContainers.emotes.append(rowEmotes);
 
-    // Colors category: User colors
-    const checksColors = document.createElement('div');
-    checksColors.className = 'styleChecks';
-    checksColors.append(userColors.label);
-    categoryContainers.colors.append(checksColors);
 
     // Visual style category: Custom CSS
     const checksVisual = document.createElement('div');
     checksVisual.className = 'styleChecks';
     checksVisual.append(frameRed.label);
+    
+    // Select for visual style sections
+    const visualSectionSelect = document.createElement('select');
+    visualSectionSelect.className = 'styleCategorySelect';
+    visualSectionSelect.style.marginTop = 'var(--space-13)';
+    const visualSections = [
+      { value: 'border', label: 'Bordure' },
+      { value: 'bg', label: 'Fond' },
+      { value: 'shadow', label: 'Ombre intérieure' },
+      { value: 'text', label: 'Texte' },
+      { value: 'user', label: 'Pseudonyme' },
+    ];
+    visualSections.forEach((sec) => {
+      const option = document.createElement('option');
+      option.value = sec.value;
+      option.textContent = sec.label;
+      visualSectionSelect.append(option);
+    });
+    visualSectionSelect.value = 'border';
+    
+    // Container for visual style sections
+    const visualSectionsContainer = document.createElement('div');
+    visualSectionsContainer.className = 'visualSectionsContainer';
+    
+    // Section: Bordure
+    const sectionBorder = document.createElement('div');
+    sectionBorder.className = 'styleSection';
+    const sectionBorderTitle = document.createElement('div');
+    sectionBorderTitle.className = 'styleSection__title';
+    sectionBorderTitle.textContent = 'Bordure';
     const rowFrameBorder = document.createElement('div');
     rowFrameBorder.className = 'styleGrid__row';
     rowFrameBorder.append(name('Épaisseur'), frameBorderWidth, name('Couleur bordure'), frameBorderColor);
     const rowFrameRadius = document.createElement('div');
     rowFrameRadius.className = 'styleGrid__row';
-    rowFrameRadius.append(name('Rayon'), frameBorderRadius, name('Fond'), frameBgColor);
+    rowFrameRadius.append(name('Rayon'), frameBorderRadius, name('Padding'), framePadding);
+    sectionBorder.append(sectionBorderTitle, rowFrameBorder, rowFrameRadius);
+    
+    // Section: Fond
+    const sectionBg = document.createElement('div');
+    sectionBg.className = 'styleSection';
+    const sectionBgTitle = document.createElement('div');
+    sectionBgTitle.className = 'styleSection__title';
+    sectionBgTitle.textContent = 'Fond';
+    const rowFrameBg = document.createElement('div');
+    rowFrameBg.className = 'styleGrid__row';
+    rowFrameBg.append(name('Couleur'), frameBgColor, document.createElement('div'), document.createElement('div'));
+    sectionBg.append(sectionBgTitle, rowFrameBg);
+    
+    // Section: Ombre
+    const sectionShadow = document.createElement('div');
+    sectionShadow.className = 'styleSection';
+    const sectionShadowTitle = document.createElement('div');
+    sectionShadowTitle.className = 'styleSection__title';
+    sectionShadowTitle.textContent = 'Ombre intérieure';
     const rowFrameShadow = document.createElement('div');
     rowFrameShadow.className = 'styleGrid__row';
-    rowFrameShadow.append(name('Ombre blur'), frameShadowBlur, name('Couleur ombre'), frameShadowColor);
+    rowFrameShadow.append(name('Blur'), frameShadowBlur, name('Couleur'), frameShadowColor);
+    sectionShadow.append(sectionShadowTitle, rowFrameShadow);
+    
+    // Section: Texte
+    const sectionText = document.createElement('div');
+    sectionText.className = 'styleSection';
+    const sectionTextTitle = document.createElement('div');
+    sectionTextTitle.className = 'styleSection__title';
+    sectionTextTitle.textContent = 'Texte';
     const rowFrameText = document.createElement('div');
     rowFrameText.className = 'styleGrid__row';
-    rowFrameText.append(name('Couleur texte'), frameTextColor, document.createElement('div'), document.createElement('div'));
+    rowFrameText.append(name('Couleur'), frameTextColor, document.createElement('div'), document.createElement('div'));
     const checksTextStyle = document.createElement('div');
     checksTextStyle.className = 'styleChecks';
-    checksTextStyle.append(frameTextBold.label, frameTextItalic.label, frameTextUnderline.label, frameTextStrikethrough.label, frameTextUppercase.label);
-    categoryContainers.visual.append(checksVisual, rowFrameBorder, rowFrameRadius, rowFrameShadow, rowFrameText, checksTextStyle);
+    checksTextStyle.append(frameTextBold.label, frameTextItalic.label, frameTextUnderline.label, frameTextUppercase.label);
+    sectionText.append(sectionTextTitle, rowFrameText, checksTextStyle);
+    
+    // Section: Pseudonyme
+    const sectionUser = document.createElement('div');
+    sectionUser.className = 'styleSection';
+    const sectionUserTitle = document.createElement('div');
+    sectionUserTitle.className = 'styleSection__title';
+    sectionUserTitle.textContent = 'Pseudonyme';
+    const checksUserColors = document.createElement('div');
+    checksUserColors.className = 'styleChecks';
+    checksUserColors.append(userColors.label);
+    const rowUserColor = document.createElement('div');
+    rowUserColor.className = 'styleGrid__row';
+    rowUserColor.append(name('Couleur'), userColor, document.createElement('div'), document.createElement('div'));
+    const checksUserStyle = document.createElement('div');
+    checksUserStyle.className = 'styleChecks';
+    checksUserStyle.append(userTextBold.label, userTextItalic.label, userTextUnderline.label, userTextUppercase.label);
+    sectionUser.append(sectionUserTitle, checksUserColors, rowUserColor, checksUserStyle);
+    
+    // Add data attributes to sections for selection
+    sectionBorder.dataset.visualSection = 'border';
+    sectionBg.dataset.visualSection = 'bg';
+    sectionShadow.dataset.visualSection = 'shadow';
+    sectionText.dataset.visualSection = 'text';
+    sectionUser.dataset.visualSection = 'user';
+    
+    // Add sections to container
+    visualSectionsContainer.append(sectionBorder, sectionBg, sectionShadow, sectionText, sectionUser);
+    
+    // Show/hide visual sections based on selection
+    function showVisualSection(sectionValue) {
+      visualSectionsContainer.querySelectorAll('[data-visual-section]').forEach((section) => {
+        section.style.display = section.dataset.visualSection === sectionValue ? 'block' : 'none';
+      });
+    }
+    showVisualSection('border');
+    visualSectionSelect.addEventListener('change', () => showVisualSection(visualSectionSelect.value));
+    
+    categoryContainers.visual.append(checksVisual, visualSectionSelect, visualSectionsContainer);
 
     // Show/hide categories based on selection
     function showCategory(categoryValue) {
