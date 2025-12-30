@@ -45,7 +45,10 @@ function splitWithTwitchEmotes(message, tagsEmotes) {
 function splitTextWithCustomEmotes(text, emoteMap) {
   // Replace tokens separated by whitespace, keeping whitespace as text segments.
   // Custom emotes usually come as standalone tokens.
-  if (!emoteMap || emoteMap.size === 0) return [{ type: 'text', text }];
+  if (!emoteMap || emoteMap.size === 0) {
+    // Still need to detect mentions even if no custom emotes
+    return splitTextForMentions(text);
+  }
 
   const parts = text.split(/(\s+)/); // keep spaces
   const segs = [];
@@ -64,21 +67,63 @@ function splitTextWithCustomEmotes(text, emoteMap) {
 
     if (pre) segs.push({ type: 'text', text: pre });
 
-    const em = emoteMap.get(token);
-    if (em) {
+    // Check for mentions first (@username)
+    if (token.startsWith('@') && token.length > 1) {
+      const mentionName = token.slice(1);
       segs.push({
-        type: 'emote',
-        provider: em.provider,
-        id: em.id,
-        url: em.url,
-        alt: token,
-        name: token,
+        type: 'mention',
+        username: mentionName,
+        text: token,
       });
     } else {
-      segs.push({ type: 'text', text: token });
+      const em = emoteMap.get(token);
+      if (em) {
+        segs.push({
+          type: 'emote',
+          provider: em.provider,
+          id: em.id,
+          url: em.url,
+          alt: token,
+          name: token,
+        });
+      } else {
+        segs.push({ type: 'text', text: token });
+      }
     }
 
     if (post) segs.push({ type: 'text', text: post });
+  }
+  return segs;
+}
+
+function splitTextForMentions(text) {
+  // Split text to detect mentions (@username)
+  const mentionRegex = /(@[a-zA-Z0-9_]+)/g;
+  const segs = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = mentionRegex.exec(text)) !== null) {
+    // Add text before mention
+    if (match.index > lastIndex) {
+      segs.push({ type: 'text', text: text.slice(lastIndex, match.index) });
+    }
+    // Add mention
+    const mentionName = match[1].slice(1); // Remove @
+    segs.push({
+      type: 'mention',
+      username: mentionName,
+      text: match[1],
+    });
+    lastIndex = match.index + match[1].length;
+  }
+  // Add remaining text
+  if (lastIndex < text.length) {
+    segs.push({ type: 'text', text: text.slice(lastIndex) });
+  }
+  // If no mentions found, return original text
+  if (segs.length === 0) {
+    segs.push({ type: 'text', text });
   }
   return segs;
 }
