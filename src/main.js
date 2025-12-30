@@ -1,5 +1,6 @@
 import { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage } from 'electron';
 import path from 'node:path';
+import fs from 'node:fs';
 import started from 'electron-squirrel-startup';
 import { createSettingsStore } from './main/settingsStore';
 import { createTwitchChat } from './main/twitchChat';
@@ -16,8 +17,64 @@ let settingsStore;
 let twitchChat;
 let uiServer;
 
+function getIconPath(iconName) {
+  const isDev = !!MAIN_WINDOW_VITE_DEV_SERVER_URL;
+  
+  if (isDev) {
+    // En développement: utiliser le chemin depuis la racine du projet
+    // __dirname pointe vers .vite/build/, donc on remonte de 2 niveaux pour atteindre la racine
+    const rootPath = path.resolve(__dirname, '../..');
+    const iconPath = path.join(rootPath, 'public/icons/logo', iconName);
+    
+    return iconPath;
+  } else {
+    // En production: Electron Forge copie les fichiers via extraResource dans resources/
+    // Avec extraResource configuré pour copier des fichiers individuels, ils sont directement dans resources/
+    if (process.resourcesPath) {
+      // Les fichiers sont directement dans resources/ (pas dans un sous-dossier)
+      const resourcesPath = path.join(process.resourcesPath, iconName);
+      if (fs.existsSync(resourcesPath)) {
+        return resourcesPath;
+      }
+      
+      // Fallback: essayer dans un sous-dossier logo/ (si le dossier était copié)
+      const logoPath = path.join(process.resourcesPath, 'logo', iconName);
+      if (fs.existsSync(logoPath)) {
+        return logoPath;
+      }
+    }
+    
+    // Fallback: essayer depuis app.asar/public/ (si Vite a copié les fichiers)
+    const appPath = app.getAppPath();
+    const appIconPath = path.join(appPath, 'public/icons/logo', iconName);
+    if (fs.existsSync(appIconPath)) {
+      return appIconPath;
+    }
+    
+    // Dernier recours: depuis __dirname
+    const buildPath = path.resolve(__dirname, '../public/icons/logo', iconName);
+    return buildPath;
+  }
+}
+
 function getTrayIcon() {
-  // Tiny 1x1 PNG (opaque) - Electron will scale it for the tray.
+  // Utilise app.ico pour le tray (ou DucVoice.png en fallback)
+  const iconPath = getIconPath('app.ico');
+  const icon = nativeImage.createFromPath(iconPath);
+  
+  // Vérifier si l'icône a été chargée (isEmpty() retourne true si le fichier n'existe pas)
+  if (!icon.isEmpty()) {
+    return icon;
+  }
+  
+  // Fallback vers PNG si ICO ne fonctionne pas
+  const pngPath = getIconPath('DucVoice.png');
+  const pngIcon = nativeImage.createFromPath(pngPath);
+  if (!pngIcon.isEmpty()) {
+    return pngIcon;
+  }
+  
+  // Fallback ultime: 1x1 PNG
   const dataUrl =
     'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+X2kQAAAAASUVORK5CYII=';
   return nativeImage.createFromDataURL(dataUrl);
@@ -58,6 +115,18 @@ function ensureTray() {
 const createWindow = () => {
   const isDev = !!MAIN_WINDOW_VITE_DEV_SERVER_URL;
 
+  // Charger l'icône de la fenêtre
+  const iconPath = getIconPath('app.ico');
+  let windowIcon = nativeImage.createFromPath(iconPath);
+  
+  // Vérifier si l'icône a été chargée
+  if (windowIcon.isEmpty()) {
+    // Fallback vers PNG si ICO ne fonctionne pas
+    const pngPath = getIconPath('DucVoice.png');
+    windowIcon = nativeImage.createFromPath(pngPath);
+    // Si le PNG n'existe pas non plus, windowIcon sera vide mais Electron gérera ça
+  }
+
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 500,
@@ -66,6 +135,7 @@ const createWindow = () => {
     minHeight: 500,
     autoHideMenuBar: true,
     frame: false,
+    icon: windowIcon, // Icône de la fenêtre (barre des tâches Windows)
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -91,6 +161,14 @@ const createWindow = () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  // Définir l'icône de l'application (utilisée dans la barre des tâches et autres endroits)
+  const appIconPath = getIconPath('app.ico');
+  const appIcon = nativeImage.createFromPath(appIconPath);
+  if (!appIcon.isEmpty()) {
+    app.dock?.setIcon?.(appIcon); // macOS dock
+  }
+  // L'icône de la fenêtre est déjà définie dans createWindow
+
   // Remove the application menu entirely (Windows/Linux)
   Menu.setApplicationMenu(null);
 
