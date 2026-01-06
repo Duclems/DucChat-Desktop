@@ -1,4 +1,4 @@
-import { normUserKey, fallbackUserColor } from '../utils/messageUtils';
+import { normUserKey, fallbackUserColor, ensureColorVisibility } from '../utils/messageUtils';
 import { getInterfaceConfig } from '../utils/styleUtils';
 
 /**
@@ -27,8 +27,9 @@ export function renderMessage(m, pseudosCfg, userColorCache) {
   if (userColors) {
     const c = String(m.userColor || '').trim();
     if (c) {
-      // Use Twitch color if available
-      row.style.setProperty('--user-color', c);
+      // Use Twitch color if available, but ensure it's visible on dark background
+      const safeColor = ensureColorVisibility(c, origUser, userColorCache);
+      row.style.setProperty('--user-color', safeColor);
     } else {
       // No Twitch color defined, use random color based on username
       const randomColor = userColorCache 

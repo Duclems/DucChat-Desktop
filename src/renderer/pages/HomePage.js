@@ -894,6 +894,7 @@ export function HomePage() {
         // Build box-shadow value combining inner and outer shadows
         // Outer shadow first, then inner shadow (order matters for visibility)
         const shadows = [];
+        let outerShadowPadding = 0;
         if (cfg.frameOuterShadowBlur > 0) {
           const outerShadowColor = cfg.frameOuterShadowColor || '#000000';
           const outerOpacity = (cfg.frameOuterShadowOpacity !== undefined ? cfg.frameOuterShadowOpacity : 100) / 100;
@@ -904,6 +905,9 @@ export function HomePage() {
           const b = parseInt(hex.substring(4, 6), 16);
           const rgbaColor = `rgba(${r}, ${g}, ${b}, ${outerOpacity})`;
           shadows.push(`0 2px ${cfg.frameOuterShadowBlur}px ${rgbaColor}`);
+          // Calculate padding needed: blur spreads in all directions, so we need blur * 2 for each side
+          // Plus offset (2px) + extra margin for safety (10px)
+          outerShadowPadding = (cfg.frameOuterShadowBlur * 2) + 2 + 10;
         }
         if (cfg.frameShadowBlur > 0) {
           const shadowColor = cfg.frameShadowColor || '#000000';
@@ -920,6 +924,12 @@ export function HomePage() {
           document.documentElement.style.setProperty('--frame-box-shadow', shadows.join(', '));
         } else {
           document.documentElement.style.removeProperty('--frame-box-shadow');
+        }
+        // Add padding to chatLog to accommodate outer shadow
+        if (outerShadowPadding > 0) {
+          document.documentElement.style.setProperty('--chat-log-shadow-padding', `${outerShadowPadding}px`);
+        } else {
+          document.documentElement.style.removeProperty('--chat-log-shadow-padding');
         }
         document.documentElement.style.setProperty('--frame-text-color', cfg.frameTextColor);
         document.documentElement.style.setProperty('--frame-text-weight', cfg.frameTextBold ? 'bold' : 'normal');

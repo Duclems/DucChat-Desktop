@@ -139,6 +139,7 @@ export function mountApp() {
     // Build box-shadow value combining inner and outer shadows
     // Outer shadow first, then inner shadow (order matters for visibility)
     const shadows = [];
+    let outerShadowPadding = 0;
     if (frameOuterShadowBlur > 0) {
       const outerOpacity = frameOuterShadowOpacity / 100;
       // Convert hex to rgba
@@ -148,6 +149,9 @@ export function mountApp() {
       const b = parseInt(hex.substring(4, 6), 16);
       const rgbaColor = `rgba(${r}, ${g}, ${b}, ${outerOpacity})`;
       shadows.push(`0 2px ${frameOuterShadowBlur}px ${rgbaColor}`);
+      // Calculate padding needed: blur spreads in all directions, so we need blur * 2 for each side
+      // Plus offset (2px) + extra margin for safety (10px)
+      outerShadowPadding = (frameOuterShadowBlur * 2) + 2 + 10;
     }
     if (frameShadowBlur > 0) {
       const opacity = frameShadowOpacity / 100;
@@ -163,6 +167,12 @@ export function mountApp() {
       document.documentElement.style.setProperty('--frame-box-shadow', shadows.join(', '));
     } else {
       document.documentElement.style.removeProperty('--frame-box-shadow');
+    }
+    // Add padding to chatLog to accommodate outer shadow
+    if (outerShadowPadding > 0) {
+      document.documentElement.style.setProperty('--chat-log-shadow-padding', `${outerShadowPadding}px`);
+    } else {
+      document.documentElement.style.removeProperty('--chat-log-shadow-padding');
     }
     document.documentElement.style.setProperty('--frame-text-color', frameTextColor);
     document.documentElement.style.setProperty('--frame-text-weight', frameTextBold ? 'bold' : 'normal');

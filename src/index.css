@@ -544,10 +544,11 @@ body.isOverlay .card {
 .chatLog {
   margin-top: var(--space-13);
   height: 260px;
-  overflow: auto;
+  overflow-x: visible;
+  overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: var(--radius-13);
-  padding: var(--space-13);
+  padding: calc(var(--space-13) + var(--chat-log-shadow-padding, 0px)) !important;
   background: rgba(0, 0, 0, 0.12);
   font-size: var(--chat-font-size, 14px);
   display: flex;
@@ -562,9 +563,11 @@ body.isOverlay .chatLog {
   height: 100%;
   border: none;
   border-radius: 0;
-  padding: 0;
+  padding: var(--chat-log-shadow-padding, 0px) !important;
   background: transparent;
   gap: var(--msg-pad, 0.15em);
+  overflow-x: visible;
+  overflow-y: auto;
 }
 
 body.isOverlay .chatMsg {
@@ -573,7 +576,7 @@ body.isOverlay .chatMsg {
 
 body.isOverlay.isCompact .chatLog {
   height: 100%;
-  padding: 0;
+  padding: var(--chat-log-shadow-padding, 0px) !important;
 }
 
 body.isOverlay.isCompact .chatLog {
