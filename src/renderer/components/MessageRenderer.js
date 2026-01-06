@@ -22,7 +22,7 @@ export function renderMessage(m, pseudosCfg) {
 
   const user = document.createElement('span');
   user.className = 'chatMsg__user';
-  user.textContent = `${displayUser} :`;
+  user.textContent = `${displayUser}:`;
   const { userColors, userColor: customUserColor } = getInterfaceConfig();
   if (userColors) {
     const c = String(m.userColor || '').trim();
