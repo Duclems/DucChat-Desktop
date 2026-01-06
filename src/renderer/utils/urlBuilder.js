@@ -26,18 +26,21 @@ export function buildInterfaceUrl(baseUrl, cfg) {
       if (cfg.frameShadowOpacity !== undefined) u.searchParams.set('frameShadowOpacity', String(cfg.frameShadowOpacity));
     }
     if (cfg.frameTextColor) u.searchParams.set('frameTextColor', cfg.frameTextColor);
+    if (cfg.frameTextFont) u.searchParams.set('frameTextFont', cfg.frameTextFont);
     if (cfg.frameTextBold) u.searchParams.set('frameTextBold', '1');
     if (cfg.frameTextItalic) u.searchParams.set('frameTextItalic', '1');
     if (cfg.frameTextUnderline) u.searchParams.set('frameTextUnderline', '1');
     if (cfg.frameTextUppercase) u.searchParams.set('frameTextUppercase', '1');
     if (cfg.frameTextCapitalizeFirst) u.searchParams.set('frameTextCapitalizeFirst', '1');
     if (cfg.userColor) u.searchParams.set('userColor', cfg.userColor);
+    if (cfg.userFont) u.searchParams.set('userFont', cfg.userFont);
     if (cfg.userTextBold) u.searchParams.set('userTextBold', '1');
     if (cfg.userTextItalic) u.searchParams.set('userTextItalic', '1');
     if (cfg.userTextUnderline) u.searchParams.set('userTextUnderline', '1');
     if (cfg.userTextUppercase) u.searchParams.set('userTextUppercase', '1');
     if (cfg.userCapitalizeFirst) u.searchParams.set('userCapitalizeFirst', '1');
     if (cfg.mentionColor) u.searchParams.set('mentionColor', cfg.mentionColor);
+    if (cfg.mentionFont) u.searchParams.set('mentionFont', cfg.mentionFont);
     if (cfg.mentionBold) u.searchParams.set('mentionBold', '1');
     if (cfg.mentionItalic) u.searchParams.set('mentionItalic', '1');
     if (cfg.mentionUnderline) u.searchParams.set('mentionUnderline', '1');

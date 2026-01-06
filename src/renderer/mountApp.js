@@ -30,17 +30,20 @@ export function mountApp() {
   const frameShadowColorParam = params.get('frameShadowColor');
   const frameShadowOpacityParam = Number(params.get('frameShadowOpacity'));
   const frameTextColorParam = params.get('frameTextColor');
+  const frameTextFontParam = params.get('frameTextFont');
   const frameTextBoldParam = params.get('frameTextBold');
   const frameTextItalicParam = params.get('frameTextItalic');
   const frameTextUnderlineParam = params.get('frameTextUnderline');
   const frameTextUppercaseParam = params.get('frameTextUppercase');
   const frameTextCapitalizeFirstParam = params.get('frameTextCapitalizeFirst');
   const userColorParam = params.get('userColor');
+  const userFontParam = params.get('userFont');
   const userTextBoldParam = params.get('userTextBold');
   const userTextItalicParam = params.get('userTextItalic');
   const userTextUnderlineParam = params.get('userTextUnderline');
   const userTextUppercaseParam = params.get('userTextUppercase');
   const mentionColorParam = params.get('mentionColor');
+  const mentionFontParam = params.get('mentionFont');
   const mentionBoldParam = params.get('mentionBold');
   const mentionItalicParam = params.get('mentionItalic');
   const mentionUnderlineParam = params.get('mentionUnderline');
@@ -76,17 +79,20 @@ export function mountApp() {
   const frameShadowColor = frameShadowColorParam && /^#[0-9A-Fa-f]{6}$/.test(frameShadowColorParam) ? frameShadowColorParam : '#000000';
   const frameShadowOpacity = Number.isFinite(frameShadowOpacityParam) && frameShadowOpacityParam >= 0 && frameShadowOpacityParam <= 100 ? frameShadowOpacityParam : 100;
   const frameTextColor = frameTextColorParam && /^#[0-9A-Fa-f]{6}$/.test(frameTextColorParam) ? frameTextColorParam : '#ffffff';
+  const frameTextFont = frameTextFontParam || '';
   const frameTextBold = frameTextBoldParam === '1' || frameTextBoldParam === 'true';
   const frameTextItalic = frameTextItalicParam === '1' || frameTextItalicParam === 'true';
   const frameTextUnderline = frameTextUnderlineParam === '1' || frameTextUnderlineParam === 'true';
   const frameTextUppercase = frameTextUppercaseParam === '1' || frameTextUppercaseParam === 'true';
   const frameTextCapitalizeFirst = frameTextCapitalizeFirstParam === '1' || frameTextCapitalizeFirstParam === 'true';
   const userColor = userColorParam && /^#[0-9A-Fa-f]{6}$/.test(userColorParam) ? userColorParam : null;
+  const userFont = userFontParam || '';
   const userTextBold = userTextBoldParam === '1' || userTextBoldParam === 'true';
   const userTextItalic = userTextItalicParam === '1' || userTextItalicParam === 'true';
   const userTextUnderline = userTextUnderlineParam === '1' || userTextUnderlineParam === 'true';
   const userTextUppercase = userTextUppercaseParam === '1' || userTextUppercaseParam === 'true';
   const mentionColor = mentionColorParam && /^#[0-9A-Fa-f]{6}$/.test(mentionColorParam) ? mentionColorParam : '#9146ff';
+  const mentionFont = mentionFontParam || '';
   const mentionBold = mentionBoldParam === '1' || mentionBoldParam === 'true';
   const mentionItalic = mentionItalicParam === '1' || mentionItalicParam === 'true';
   const mentionUnderline = mentionUnderlineParam === '1' || mentionUnderlineParam === 'true';
@@ -128,6 +134,11 @@ export function mountApp() {
     document.documentElement.style.setProperty('--frame-text-style', frameTextItalic ? 'italic' : 'normal');
     document.documentElement.style.setProperty('--frame-text-decoration', frameTextUnderline ? 'underline' : 'none');
     document.documentElement.style.setProperty('--frame-text-transform', frameTextUppercase ? 'uppercase' : 'none');
+    if (frameTextFont) {
+      document.documentElement.style.setProperty('--frame-text-font-family', frameTextFont);
+    } else {
+      document.documentElement.style.removeProperty('--frame-text-font-family');
+    }
   }
   
   // Apply user (pseudo) styles
@@ -140,6 +151,11 @@ export function mountApp() {
   document.documentElement.style.setProperty('--user-text-style', userTextItalic ? 'italic' : 'normal');
   document.documentElement.style.setProperty('--user-text-decoration', userTextUnderline ? 'underline' : 'none');
   document.documentElement.style.setProperty('--user-text-transform', userTextUppercase ? 'uppercase' : 'none');
+  if (userFont) {
+    document.documentElement.style.setProperty('--user-font-family', userFont);
+  } else {
+    document.documentElement.style.removeProperty('--user-font-family');
+  }
   
   // Apply mention styles (always enabled)
   document.documentElement.style.setProperty('--mention-color', mentionColor);
@@ -147,6 +163,11 @@ export function mountApp() {
   document.documentElement.style.setProperty('--mention-style', mentionItalic ? 'italic' : 'normal');
   document.documentElement.style.setProperty('--mention-decoration', mentionUnderline ? 'underline' : 'none');
   document.documentElement.style.setProperty('--mention-transform', mentionUppercase ? 'uppercase' : 'none');
+  if (mentionFont) {
+    document.documentElement.style.setProperty('--mention-font-family', mentionFont);
+  } else {
+    document.documentElement.style.removeProperty('--mention-font-family');
+  }
   
   // Apply layout styles (width and alignment)
   const msgWidthType = msgWidthTypeParam || 'auto';

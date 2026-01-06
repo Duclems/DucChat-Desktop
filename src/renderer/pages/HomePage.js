@@ -426,6 +426,171 @@ export function HomePage() {
       return i;
     };
 
+    const fontSelect = (defaultValue) => {
+      const container = document.createElement('div');
+      container.style.display = 'flex';
+      container.style.flexDirection = 'column';
+      container.style.gap = '0.5em';
+      container.style.width = '100%';
+      
+      const select = document.createElement('select');
+      select.className = 'textInput';
+      const fonts = [
+        { value: '', label: 'Par défaut' },
+        // Polices génériques
+        { value: 'serif', label: 'Serif (générique)' },
+        { value: 'sans-serif', label: 'Sans-serif (générique)' },
+        { value: 'monospace', label: 'Monospace (générique)' },
+        { value: 'cursive', label: 'Cursive (générique)' },
+        { value: 'fantasy', label: 'Fantasy (générique)' },
+        // Polices Windows standard
+        { value: 'Arial', label: 'Arial' },
+        { value: 'Arial Black', label: 'Arial Black' },
+        { value: 'Arial Narrow', label: 'Arial Narrow' },
+        { value: 'Arial Rounded MT Bold', label: 'Arial Rounded MT Bold' },
+        { value: 'Bahnschrift', label: 'Bahnschrift' },
+        { value: 'Calibri', label: 'Calibri' },
+        { value: 'Cambria', label: 'Cambria' },
+        { value: 'Cambria Math', label: 'Cambria Math' },
+        { value: 'Candara', label: 'Candara' },
+        { value: 'Comic Sans MS', label: 'Comic Sans MS' },
+        { value: 'Consolas', label: 'Consolas' },
+        { value: 'Constantia', label: 'Constantia' },
+        { value: 'Corbel', label: 'Corbel' },
+        { value: 'Courier New', label: 'Courier New' },
+        { value: 'Ebrima', label: 'Ebrima' },
+        { value: 'Franklin Gothic Medium', label: 'Franklin Gothic Medium' },
+        { value: 'Gabriola', label: 'Gabriola' },
+        { value: 'Gadugi', label: 'Gadugi' },
+        { value: 'Georgia', label: 'Georgia' },
+        { value: 'HoloLens MDL2 Assets', label: 'HoloLens MDL2 Assets' },
+        { value: 'Impact', label: 'Impact' },
+        { value: 'Ink Free', label: 'Ink Free' },
+        { value: 'Javanese Text', label: 'Javanese Text' },
+        { value: 'Leelawadee UI', label: 'Leelawadee UI' },
+        { value: 'Lucida Console', label: 'Lucida Console' },
+        { value: 'Lucida Sans Unicode', label: 'Lucida Sans Unicode' },
+        { value: 'Malgun Gothic', label: 'Malgun Gothic' },
+        { value: 'Marlett', label: 'Marlett' },
+        { value: 'Microsoft Himalaya', label: 'Microsoft Himalaya' },
+        { value: 'Microsoft JhengHei', label: 'Microsoft JhengHei' },
+        { value: 'Microsoft JhengHei UI', label: 'Microsoft JhengHei UI' },
+        { value: 'Microsoft New Tai Lue', label: 'Microsoft New Tai Lue' },
+        { value: 'Microsoft PhagsPa', label: 'Microsoft PhagsPa' },
+        { value: 'Microsoft Sans Serif', label: 'Microsoft Sans Serif' },
+        { value: 'Microsoft Tai Le', label: 'Microsoft Tai Le' },
+        { value: 'Microsoft YaHei', label: 'Microsoft YaHei' },
+        { value: 'Microsoft YaHei UI', label: 'Microsoft YaHei UI' },
+        { value: 'Microsoft Yi Baiti', label: 'Microsoft Yi Baiti' },
+        { value: 'MingLiU-ExtB', label: 'MingLiU-ExtB' },
+        { value: 'Mongolian Baiti', label: 'Mongolian Baiti' },
+        { value: 'MS Gothic', label: 'MS Gothic' },
+        { value: 'MS PGothic', label: 'MS PGothic' },
+        { value: 'MS UI Gothic', label: 'MS UI Gothic' },
+        { value: 'MV Boli', label: 'MV Boli' },
+        { value: 'Myanmar Text', label: 'Myanmar Text' },
+        { value: 'Nirmala UI', label: 'Nirmala UI' },
+        { value: 'Palatino Linotype', label: 'Palatino Linotype' },
+        { value: 'Segoe MDL2 Assets', label: 'Segoe MDL2 Assets' },
+        { value: 'Segoe Print', label: 'Segoe Print' },
+        { value: 'Segoe Script', label: 'Segoe Script' },
+        { value: 'Segoe UI', label: 'Segoe UI' },
+        { value: 'Segoe UI Black', label: 'Segoe UI Black' },
+        { value: 'Segoe UI Emoji', label: 'Segoe UI Emoji' },
+        { value: 'Segoe UI Historic', label: 'Segoe UI Historic' },
+        { value: 'Segoe UI Symbol', label: 'Segoe UI Symbol' },
+        { value: 'SimSun', label: 'SimSun' },
+        { value: 'Sitka', label: 'Sitka' },
+        { value: 'Sylfaen', label: 'Sylfaen' },
+        { value: 'Symbol', label: 'Symbol' },
+        { value: 'Tahoma', label: 'Tahoma' },
+        { value: 'Times New Roman', label: 'Times New Roman' },
+        { value: 'Trebuchet MS', label: 'Trebuchet MS' },
+        { value: 'Verdana', label: 'Verdana' },
+        { value: 'Webdings', label: 'Webdings' },
+        { value: 'Wingdings', label: 'Wingdings' },
+        { value: 'Yu Gothic', label: 'Yu Gothic' },
+        { value: 'Yu Gothic UI', label: 'Yu Gothic UI' },
+        // Polices additionnelles courantes
+        { value: 'Book Antiqua', label: 'Book Antiqua' },
+        { value: 'Bookman Old Style', label: 'Bookman Old Style' },
+        { value: 'Century Gothic', label: 'Century Gothic' },
+        { value: 'Century Schoolbook', label: 'Century Schoolbook' },
+        { value: 'Copperplate Gothic', label: 'Copperplate Gothic' },
+        { value: 'Courier', label: 'Courier' },
+        { value: 'Garamond', label: 'Garamond' },
+        { value: 'Helvetica', label: 'Helvetica' },
+        { value: 'Lucida Bright', label: 'Lucida Bright' },
+        { value: 'Lucida Fax', label: 'Lucida Fax' },
+        { value: 'Lucida Handwriting', label: 'Lucida Handwriting' },
+        { value: 'Lucida Sans', label: 'Lucida Sans' },
+        { value: 'Palatino', label: 'Palatino' },
+        { value: 'Perpetua', label: 'Perpetua' },
+        { value: 'Rockwell', label: 'Rockwell' },
+        { value: 'Tahoma', label: 'Tahoma' },
+        { value: 'Tempus Sans ITC', label: 'Tempus Sans ITC' },
+        { value: '__CUSTOM__', label: 'Personnalisée...' },
+      ];
+      fonts.forEach((font) => {
+        const option = document.createElement('option');
+        option.value = font.value;
+        option.textContent = font.label;
+        if (font.value === defaultValue) option.selected = true;
+        select.append(option);
+      });
+      
+      const customInput = document.createElement('input');
+      customInput.className = 'textInput';
+      customInput.type = 'text';
+      customInput.placeholder = 'Nom de la police personnalisée';
+      customInput.style.display = 'none';
+      
+      // Vérifier si la valeur par défaut est une police personnalisée (pas dans la liste)
+      const isDefaultCustom = defaultValue && !fonts.some(f => f.value === defaultValue && f.value !== '__CUSTOM__');
+      if (isDefaultCustom) {
+        select.value = '__CUSTOM__';
+        customInput.value = defaultValue;
+        customInput.style.display = 'block';
+      }
+      
+      select.addEventListener('change', () => {
+        if (select.value === '__CUSTOM__') {
+          customInput.style.display = 'block';
+          customInput.focus();
+        } else {
+          customInput.style.display = 'none';
+          customInput.value = '';
+        }
+      });
+      
+      container.append(select, customInput);
+      
+      // Retourner un objet avec les éléments nécessaires
+      return {
+        container,
+        select,
+        customInput,
+        getValue: () => {
+          if (select.value === '__CUSTOM__') {
+            return customInput.value.trim() || '';
+          }
+          return select.value;
+        },
+        setValue: (value) => {
+          const isCustom = value && !fonts.some(f => f.value === value && f.value !== '__CUSTOM__');
+          if (isCustom) {
+            select.value = '__CUSTOM__';
+            customInput.value = value;
+            customInput.style.display = 'block';
+          } else {
+            select.value = value || '';
+            customInput.style.display = 'none';
+            customInput.value = '';
+          }
+        }
+      };
+    };
+
     const font = numInput('18', 8, 72);
     const limit = numInput('100', 1, 500);
     const msgPad = numInput('0.20', 0, 1);
@@ -451,6 +616,7 @@ export function HomePage() {
     const frameShadowOpacity = numInput('100', 0, 100);
     frameShadowOpacity.step = '1';
     const frameTextColor = colorInput('#ffffff');
+    const frameTextFont = fontSelect('');
     const frameTextBold = check('Gras');
     const frameTextItalic = check('Italique');
     const frameTextUnderline = check('Souligné');
@@ -462,7 +628,9 @@ export function HomePage() {
     const userTextUppercase = check('Majuscules');
     const userCapitalizeFirst = check('Première lettre en majuscule');
     const userColor = colorInput('#e5e5e4');
+    const userFont = fontSelect('');
     const mentionColor = colorInput('#9146ff');
+    const mentionFont = fontSelect('');
     const mentionBold = check('Gras');
     const mentionItalic = check('Italique');
     const mentionUnderline = check('Souligné');
@@ -520,14 +688,17 @@ export function HomePage() {
       if (typeof saved.frameShadowColor === 'string') frameShadowColor.value = saved.frameShadowColor;
       if (typeof saved.frameShadowOpacity === 'number') frameShadowOpacity.value = String(saved.frameShadowOpacity);
       if (typeof saved.frameTextColor === 'string') frameTextColor.value = saved.frameTextColor;
+      if (typeof saved.frameTextFont === 'string') frameTextFont.setValue(saved.frameTextFont);
       if (typeof saved.frameTextBold === 'boolean') frameTextBold.input.checked = saved.frameTextBold;
       if (typeof saved.frameTextItalic === 'boolean') frameTextItalic.input.checked = saved.frameTextItalic;
       if (typeof saved.frameTextUnderline === 'boolean') frameTextUnderline.input.checked = saved.frameTextUnderline;
       if (typeof saved.frameTextUppercase === 'boolean') frameTextUppercase.input.checked = saved.frameTextUppercase;
       if (typeof saved.frameTextCapitalizeFirst === 'boolean') frameTextCapitalizeFirst.input.checked = saved.frameTextCapitalizeFirst;
       if (typeof saved.userColor === 'string') userColor.value = saved.userColor;
+      if (typeof saved.userFont === 'string') userFont.setValue(saved.userFont);
       if (typeof saved.userCapitalizeFirst === 'boolean') userCapitalizeFirst.input.checked = saved.userCapitalizeFirst;
       if (typeof saved.mentionColor === 'string') mentionColor.value = saved.mentionColor;
+      if (typeof saved.mentionFont === 'string') mentionFont.setValue(saved.mentionFont);
       if (typeof saved.mentionBold === 'boolean') mentionBold.input.checked = saved.mentionBold;
       if (typeof saved.mentionItalic === 'boolean') mentionItalic.input.checked = saved.mentionItalic;
       if (typeof saved.mentionUnderline === 'boolean') mentionUnderline.input.checked = saved.mentionUnderline;
@@ -622,18 +793,21 @@ export function HomePage() {
         frameShadowColor: frameShadowColor.value || '#000000',
         frameShadowOpacity: Number(frameShadowOpacity.value) || 100,
         frameTextColor: frameTextColor.value || '#ffffff',
+        frameTextFont: frameTextFont.getValue() || '',
         frameTextBold: !!frameTextBold.input.checked,
         frameTextItalic: !!frameTextItalic.input.checked,
         frameTextUnderline: !!frameTextUnderline.input.checked,
         frameTextUppercase: !!frameTextUppercase.input.checked,
         frameTextCapitalizeFirst: !!frameTextCapitalizeFirst.input.checked,
         userColor: userColor.value || '#e5e5e4',
+        userFont: userFont.getValue() || '',
         userTextBold: !!userTextBold.input.checked,
         userTextItalic: !!userTextItalic.input.checked,
         userTextUnderline: !!userTextUnderline.input.checked,
         userTextUppercase: !!userTextUppercase.input.checked,
         userCapitalizeFirst: !!userCapitalizeFirst.input.checked,
         mentionColor: mentionColor.value || '#9146ff',
+        mentionFont: mentionFont.getValue() || '',
         mentionBold: !!mentionBold.input.checked,
         mentionItalic: !!mentionItalic.input.checked,
         mentionUnderline: !!mentionUnderline.input.checked,
@@ -699,6 +873,11 @@ export function HomePage() {
         document.documentElement.style.setProperty('--frame-text-style', cfg.frameTextItalic ? 'italic' : 'normal');
         document.documentElement.style.setProperty('--frame-text-decoration', cfg.frameTextUnderline ? 'underline' : 'none');
         document.documentElement.style.setProperty('--frame-text-transform', cfg.frameTextUppercase ? 'uppercase' : 'none');
+        if (cfg.frameTextFont) {
+          document.documentElement.style.setProperty('--frame-text-font-family', cfg.frameTextFont);
+        } else {
+          document.documentElement.style.removeProperty('--frame-text-font-family');
+        }
       }
       
       // Apply user (pseudo) styles
@@ -711,6 +890,11 @@ export function HomePage() {
       document.documentElement.style.setProperty('--user-text-style', cfg.userTextItalic ? 'italic' : 'normal');
       document.documentElement.style.setProperty('--user-text-decoration', cfg.userTextUnderline ? 'underline' : 'none');
       document.documentElement.style.setProperty('--user-text-transform', cfg.userTextUppercase ? 'uppercase' : 'none');
+      if (cfg.userFont) {
+        document.documentElement.style.setProperty('--user-font-family', cfg.userFont);
+      } else {
+        document.documentElement.style.removeProperty('--user-font-family');
+      }
       
       // Apply mention styles (always enabled)
       document.documentElement.style.setProperty('--mention-color', cfg.mentionColor || '#9146ff');
@@ -718,6 +902,11 @@ export function HomePage() {
       document.documentElement.style.setProperty('--mention-style', cfg.mentionItalic ? 'italic' : 'normal');
       document.documentElement.style.setProperty('--mention-decoration', cfg.mentionUnderline ? 'underline' : 'none');
       document.documentElement.style.setProperty('--mention-transform', cfg.mentionUppercase ? 'uppercase' : 'none');
+      if (cfg.mentionFont) {
+        document.documentElement.style.setProperty('--mention-font-family', cfg.mentionFont);
+      } else {
+        document.documentElement.style.removeProperty('--mention-font-family');
+      }
       
       // Apply layout styles (width and alignment)
       if (cfg.msgWidthType === 'fixed') {
@@ -807,17 +996,20 @@ export function HomePage() {
         frameTextUnderline: cfg.frameTextUnderline,
         frameTextUppercase: cfg.frameTextUppercase,
         frameTextCapitalizeFirst: cfg.frameTextCapitalizeFirst,
+        frameTextFont: cfg.frameTextFont,
         userColor: cfg.userColor,
         userTextBold: cfg.userTextBold,
         userTextItalic: cfg.userTextItalic,
         userTextUnderline: cfg.userTextUnderline,
         userTextUppercase: cfg.userTextUppercase,
         userCapitalizeFirst: cfg.userCapitalizeFirst,
+        userFont: cfg.userFont,
         mentionColor: cfg.mentionColor,
         mentionBold: cfg.mentionBold,
         mentionItalic: cfg.mentionItalic,
         mentionUnderline: cfg.mentionUnderline,
         mentionUppercase: cfg.mentionUppercase,
+        mentionFont: cfg.mentionFont,
         msgWidthType: cfg.msgWidthType,
         msgWidthValue: cfg.msgWidthValue,
         msgAlign: cfg.msgAlign,
@@ -849,18 +1041,24 @@ export function HomePage() {
       frameShadowColor,
       frameShadowOpacity,
       frameTextColor,
+      frameTextFont.select,
+      frameTextFont.customInput,
       frameTextBold.input,
       frameTextItalic.input,
       frameTextUnderline.input,
       frameTextUppercase.input,
       frameTextCapitalizeFirst.input,
       userColor,
+      userFont.select,
+      userFont.customInput,
       userTextBold.input,
       userTextItalic.input,
       userTextUnderline.input,
       userTextUppercase.input,
       userCapitalizeFirst.input,
       mentionColor,
+      mentionFont.select,
+      mentionFont.customInput,
       mentionBold.input,
       mentionItalic.input,
       mentionUnderline.input,
@@ -1012,13 +1210,16 @@ export function HomePage() {
     const rowFrameText = document.createElement('div');
     rowFrameText.className = 'styleGrid__row';
     rowFrameText.append(name('Couleur'), frameTextColor, document.createElement('div'), document.createElement('div'));
+    const rowFrameTextFont = document.createElement('div');
+    rowFrameTextFont.className = 'styleGrid__row';
+    rowFrameTextFont.append(name('Police'), frameTextFont.container, document.createElement('div'), document.createElement('div'));
     const checksTextStyle = document.createElement('div');
     checksTextStyle.className = 'styleChecks';
     checksTextStyle.append(frameTextBold.label, frameTextItalic.label, frameTextUnderline.label, frameTextUppercase.label);
     const checksTextCapitalize = document.createElement('div');
     checksTextCapitalize.className = 'styleChecks';
     checksTextCapitalize.append(frameTextCapitalizeFirst.label);
-    sectionText.append(sectionTextTitle, rowFrameText, checksTextStyle, checksTextCapitalize);
+    sectionText.append(sectionTextTitle, rowFrameText, rowFrameTextFont, checksTextStyle, checksTextCapitalize);
     
     // Section: Pseudonyme
     const sectionUser = document.createElement('div');
@@ -1032,13 +1233,16 @@ export function HomePage() {
     const rowUserColor = document.createElement('div');
     rowUserColor.className = 'styleGrid__row';
     rowUserColor.append(name('Couleur'), userColor, document.createElement('div'), document.createElement('div'));
+    const rowUserFont = document.createElement('div');
+    rowUserFont.className = 'styleGrid__row';
+    rowUserFont.append(name('Police'), userFont.container, document.createElement('div'), document.createElement('div'));
     const checksUserStyle = document.createElement('div');
     checksUserStyle.className = 'styleChecks';
     checksUserStyle.append(userTextBold.label, userTextItalic.label, userTextUnderline.label, userTextUppercase.label);
     const checksUserCapitalize = document.createElement('div');
     checksUserCapitalize.className = 'styleChecks';
     checksUserCapitalize.append(userCapitalizeFirst.label);
-    sectionUser.append(sectionUserTitle, checksUserColors, rowUserColor, checksUserStyle, checksUserCapitalize);
+    sectionUser.append(sectionUserTitle, checksUserColors, rowUserColor, rowUserFont, checksUserStyle, checksUserCapitalize);
     
     // Section: Citation
     const sectionMention = document.createElement('div');
@@ -1050,10 +1254,13 @@ export function HomePage() {
     const rowMentionColor = document.createElement('div');
     rowMentionColor.className = 'styleGrid__row';
     rowMentionColor.append(name('Couleur'), mentionColor, document.createElement('div'), document.createElement('div'));
+    const rowMentionFont = document.createElement('div');
+    rowMentionFont.className = 'styleGrid__row';
+    rowMentionFont.append(name('Police'), mentionFont.container, document.createElement('div'), document.createElement('div'));
     const checksMentionStyle = document.createElement('div');
     checksMentionStyle.className = 'styleChecks';
     checksMentionStyle.append(mentionBold.label, mentionItalic.label, mentionUnderline.label, mentionUppercase.label);
-    sectionMention.append(sectionMentionTitle, rowMentionColor, checksMentionStyle);
+    sectionMention.append(sectionMentionTitle, rowMentionColor, rowMentionFont, checksMentionStyle);
     
     // Add data attributes to sections for selection
     sectionBorder.dataset.visualSection = 'border';

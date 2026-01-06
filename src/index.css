@@ -660,6 +660,7 @@ body.hasFrameRed .chatMsg {
   font-style: var(--user-text-style, normal);
   text-decoration: var(--user-text-decoration, none);
   text-transform: var(--user-text-transform, none);
+  font-family: var(--user-font-family, inherit);
   flex: 0 0 auto;
 }
 
@@ -669,6 +670,7 @@ body.hasFrameRed .chatMsg {
   font-style: var(--frame-text-style, normal);
   text-decoration: var(--frame-text-decoration, none);
   text-transform: var(--frame-text-transform, none);
+  font-family: var(--frame-text-font-family, inherit);
   min-width: 0;
   word-break: break-word;
 }
@@ -679,6 +681,7 @@ body.hasFrameRed .chatMsg {
   font-style: var(--mention-style, normal);
   text-decoration: var(--mention-decoration, none);
   text-transform: var(--mention-transform, none);
+  font-family: var(--mention-font-family, inherit);
 }
 
 .chatEmote {
