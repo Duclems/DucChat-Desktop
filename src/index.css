@@ -43,6 +43,10 @@ body {
   overflow: hidden; /* only the page content should scroll */
 }
 
+body.isOverlay {
+  background: transparent;
+}
+
 /* Scrollbar styling (Chromium/Electron + Firefox) */
 .appMain,
 .chatLog {

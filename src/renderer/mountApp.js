@@ -24,6 +24,11 @@ export function mountApp() {
   const frameBgColorParam = params.get('frameBgColor');
   const frameBorderWidthParam = Number(params.get('frameBorderWidth'));
   const frameBorderColorParam = params.get('frameBorderColor');
+  const frameBorderRadiusTopLeftParam = Number(params.get('frameBorderRadiusTopLeft'));
+  const frameBorderRadiusTopRightParam = Number(params.get('frameBorderRadiusTopRight'));
+  const frameBorderRadiusBottomRightParam = Number(params.get('frameBorderRadiusBottomRight'));
+  const frameBorderRadiusBottomLeftParam = Number(params.get('frameBorderRadiusBottomLeft'));
+  // Compatibilité avec l'ancien format
   const frameBorderRadiusParam = Number(params.get('frameBorderRadius'));
   const framePaddingParam = Number(params.get('framePadding'));
   const frameShadowBlurParam = Number(params.get('frameShadowBlur'));
@@ -73,7 +78,10 @@ export function mountApp() {
   const frameBgColor = frameBgColorParam && /^#[0-9A-Fa-f]{6}$/.test(frameBgColorParam) ? frameBgColorParam : null;
   const frameBorderWidth = Number.isFinite(frameBorderWidthParam) && frameBorderWidthParam >= 0 && frameBorderWidthParam <= 20 ? Math.floor(frameBorderWidthParam) : 0;
   const frameBorderColor = frameBorderColorParam && /^#[0-9A-Fa-f]{6}$/.test(frameBorderColorParam) ? frameBorderColorParam : '#ff0000';
-  const frameBorderRadius = Number.isFinite(frameBorderRadiusParam) && frameBorderRadiusParam >= 0 && frameBorderRadiusParam <= 50 ? Math.floor(frameBorderRadiusParam) : 0;
+  const frameBorderRadiusTopLeft = Number.isFinite(frameBorderRadiusTopLeftParam) && frameBorderRadiusTopLeftParam >= 0 && frameBorderRadiusTopLeftParam <= 50 ? Math.floor(frameBorderRadiusTopLeftParam) : (Number.isFinite(frameBorderRadiusParam) && frameBorderRadiusParam >= 0 && frameBorderRadiusParam <= 50 ? Math.floor(frameBorderRadiusParam) : 0);
+  const frameBorderRadiusTopRight = Number.isFinite(frameBorderRadiusTopRightParam) && frameBorderRadiusTopRightParam >= 0 && frameBorderRadiusTopRightParam <= 50 ? Math.floor(frameBorderRadiusTopRightParam) : (Number.isFinite(frameBorderRadiusParam) && frameBorderRadiusParam >= 0 && frameBorderRadiusParam <= 50 ? Math.floor(frameBorderRadiusParam) : 0);
+  const frameBorderRadiusBottomRight = Number.isFinite(frameBorderRadiusBottomRightParam) && frameBorderRadiusBottomRightParam >= 0 && frameBorderRadiusBottomRightParam <= 50 ? Math.floor(frameBorderRadiusBottomRightParam) : (Number.isFinite(frameBorderRadiusParam) && frameBorderRadiusParam >= 0 && frameBorderRadiusParam <= 50 ? Math.floor(frameBorderRadiusParam) : 0);
+  const frameBorderRadiusBottomLeft = Number.isFinite(frameBorderRadiusBottomLeftParam) && frameBorderRadiusBottomLeftParam >= 0 && frameBorderRadiusBottomLeftParam <= 50 ? Math.floor(frameBorderRadiusBottomLeftParam) : (Number.isFinite(frameBorderRadiusParam) && frameBorderRadiusParam >= 0 && frameBorderRadiusParam <= 50 ? Math.floor(frameBorderRadiusParam) : 0);
   const framePadding = Number.isFinite(framePaddingParam) && framePaddingParam >= 0 && framePaddingParam <= 2 ? framePaddingParam : 0.3;
   const frameShadowBlur = Number.isFinite(frameShadowBlurParam) && frameShadowBlurParam >= 0 && frameShadowBlurParam <= 50 ? Math.floor(frameShadowBlurParam) : 0;
   const frameShadowColor = frameShadowColorParam && /^#[0-9A-Fa-f]{6}$/.test(frameShadowColorParam) ? frameShadowColorParam : '#000000';
@@ -115,8 +123,11 @@ export function mountApp() {
     }
     document.documentElement.style.setProperty('--frame-border-width', `${frameBorderWidth}px`);
     document.documentElement.style.setProperty('--frame-border-color', frameBorderColor);
-    if (frameBorderRadius > 0) {
-      document.documentElement.style.setProperty('--frame-border-radius', `${frameBorderRadius}px`);
+    if (frameBorderRadiusTopLeft > 0 || frameBorderRadiusTopRight > 0 || frameBorderRadiusBottomRight > 0 || frameBorderRadiusBottomLeft > 0) {
+      const borderRadius = `${frameBorderRadiusTopLeft}px ${frameBorderRadiusTopRight}px ${frameBorderRadiusBottomRight}px ${frameBorderRadiusBottomLeft}px`;
+      document.documentElement.style.setProperty('--frame-border-radius', borderRadius);
+    } else {
+      document.documentElement.style.removeProperty('--frame-border-radius');
     }
     document.documentElement.style.setProperty('--frame-padding', `${framePadding}em`);
     if (frameShadowBlur > 0) {

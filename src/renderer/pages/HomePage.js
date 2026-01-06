@@ -606,8 +606,14 @@ export function HomePage() {
     const frameBorderWidth = numInput('0', 0, 20);
     frameBorderWidth.step = '1';
     const frameBorderColor = colorInput('#ff0000');
-    const frameBorderRadius = numInput('0', 0, 50);
-    frameBorderRadius.step = '1';
+    const frameBorderRadiusTopLeft = numInput('0', 0, 50);
+    frameBorderRadiusTopLeft.step = '1';
+    const frameBorderRadiusTopRight = numInput('0', 0, 50);
+    frameBorderRadiusTopRight.step = '1';
+    const frameBorderRadiusBottomRight = numInput('0', 0, 50);
+    frameBorderRadiusBottomRight.step = '1';
+    const frameBorderRadiusBottomLeft = numInput('0', 0, 50);
+    frameBorderRadiusBottomLeft.step = '1';
     const framePadding = numInput('0.3', 0, 2);
     framePadding.step = '0.1';
     const frameShadowBlur = numInput('0', 0, 50);
@@ -682,7 +688,18 @@ export function HomePage() {
       if (typeof saved.frameBgColor === 'string') frameBgColor.value = saved.frameBgColor;
       if (typeof saved.frameBorderWidth === 'number') frameBorderWidth.value = String(saved.frameBorderWidth);
       if (typeof saved.frameBorderColor === 'string') frameBorderColor.value = saved.frameBorderColor;
-      if (typeof saved.frameBorderRadius === 'number') frameBorderRadius.value = String(saved.frameBorderRadius);
+      if (typeof saved.frameBorderRadiusTopLeft === 'number') frameBorderRadiusTopLeft.value = String(saved.frameBorderRadiusTopLeft);
+      if (typeof saved.frameBorderRadiusTopRight === 'number') frameBorderRadiusTopRight.value = String(saved.frameBorderRadiusTopRight);
+      if (typeof saved.frameBorderRadiusBottomRight === 'number') frameBorderRadiusBottomRight.value = String(saved.frameBorderRadiusBottomRight);
+      if (typeof saved.frameBorderRadiusBottomLeft === 'number') frameBorderRadiusBottomLeft.value = String(saved.frameBorderRadiusBottomLeft);
+      // Compatibilité avec l'ancien format (un seul rayon pour tous les coins)
+      if (typeof saved.frameBorderRadius === 'number' && typeof saved.frameBorderRadiusTopLeft === 'undefined') {
+        const radius = saved.frameBorderRadius;
+        frameBorderRadiusTopLeft.value = String(radius);
+        frameBorderRadiusTopRight.value = String(radius);
+        frameBorderRadiusBottomRight.value = String(radius);
+        frameBorderRadiusBottomLeft.value = String(radius);
+      }
       if (typeof saved.framePadding === 'number') framePadding.value = String(saved.framePadding);
       if (typeof saved.frameShadowBlur === 'number') frameShadowBlur.value = String(saved.frameShadowBlur);
       if (typeof saved.frameShadowColor === 'string') frameShadowColor.value = saved.frameShadowColor;
@@ -787,7 +804,10 @@ export function HomePage() {
         frameBgColor: frameBgColor.value || '#000000',
         frameBorderWidth: Number(frameBorderWidth.value) || 0,
         frameBorderColor: frameBorderColor.value || '#ff0000',
-        frameBorderRadius: Number(frameBorderRadius.value) || 0,
+        frameBorderRadiusTopLeft: Number(frameBorderRadiusTopLeft.value) || 0,
+        frameBorderRadiusTopRight: Number(frameBorderRadiusTopRight.value) || 0,
+        frameBorderRadiusBottomRight: Number(frameBorderRadiusBottomRight.value) || 0,
+        frameBorderRadiusBottomLeft: Number(frameBorderRadiusBottomLeft.value) || 0,
         framePadding: Number(framePadding.value) || 0.3,
         frameShadowBlur: Number(frameShadowBlur.value) || 0,
         frameShadowColor: frameShadowColor.value || '#000000',
@@ -849,8 +869,13 @@ export function HomePage() {
         document.documentElement.style.setProperty('--frame-bg-color', cfg.frameBgColor);
         document.documentElement.style.setProperty('--frame-border-width', `${cfg.frameBorderWidth}px`);
         document.documentElement.style.setProperty('--frame-border-color', cfg.frameBorderColor);
-        if (cfg.frameBorderRadius > 0) {
-          document.documentElement.style.setProperty('--frame-border-radius', `${cfg.frameBorderRadius}px`);
+        const topLeft = cfg.frameBorderRadiusTopLeft || 0;
+        const topRight = cfg.frameBorderRadiusTopRight || 0;
+        const bottomRight = cfg.frameBorderRadiusBottomRight || 0;
+        const bottomLeft = cfg.frameBorderRadiusBottomLeft || 0;
+        if (topLeft > 0 || topRight > 0 || bottomRight > 0 || bottomLeft > 0) {
+          const borderRadius = `${topLeft}px ${topRight}px ${bottomRight}px ${bottomLeft}px`;
+          document.documentElement.style.setProperty('--frame-border-radius', borderRadius);
         } else {
           document.documentElement.style.removeProperty('--frame-border-radius');
         }
@@ -985,7 +1010,10 @@ export function HomePage() {
         frameBgColor: cfg.frameBgColor,
         frameBorderWidth: cfg.frameBorderWidth,
         frameBorderColor: cfg.frameBorderColor,
-        frameBorderRadius: cfg.frameBorderRadius,
+        frameBorderRadiusTopLeft: cfg.frameBorderRadiusTopLeft,
+        frameBorderRadiusTopRight: cfg.frameBorderRadiusTopRight,
+        frameBorderRadiusBottomRight: cfg.frameBorderRadiusBottomRight,
+        frameBorderRadiusBottomLeft: cfg.frameBorderRadiusBottomLeft,
         framePadding: cfg.framePadding,
         frameShadowBlur: cfg.frameShadowBlur,
         frameShadowColor: cfg.frameShadowColor,
@@ -1035,7 +1063,10 @@ export function HomePage() {
       frameBgColor,
       frameBorderWidth,
       frameBorderColor,
-      frameBorderRadius,
+      frameBorderRadiusTopLeft,
+      frameBorderRadiusTopRight,
+      frameBorderRadiusBottomRight,
+      frameBorderRadiusBottomLeft,
       framePadding,
       frameShadowBlur,
       frameShadowColor,
@@ -1171,10 +1202,16 @@ export function HomePage() {
     const rowFrameBorder = document.createElement('div');
     rowFrameBorder.className = 'styleGrid__row';
     rowFrameBorder.append(name('Épaisseur'), frameBorderWidth, name('Couleur bordure'), frameBorderColor);
-    const rowFrameRadius = document.createElement('div');
-    rowFrameRadius.className = 'styleGrid__row';
-    rowFrameRadius.append(name('Rayon'), frameBorderRadius, name('Padding'), framePadding);
-    sectionBorder.append(sectionBorderTitle, rowFrameBorder, rowFrameRadius);
+    const rowFrameRadiusTop = document.createElement('div');
+    rowFrameRadiusTop.className = 'styleGrid__row';
+    rowFrameRadiusTop.append(name('Haut gauche'), frameBorderRadiusTopLeft, name('Haut droit'), frameBorderRadiusTopRight);
+    const rowFrameRadiusBottom = document.createElement('div');
+    rowFrameRadiusBottom.className = 'styleGrid__row';
+    rowFrameRadiusBottom.append(name('Bas droit'), frameBorderRadiusBottomRight, name('Bas gauche'), frameBorderRadiusBottomLeft);
+    const rowFramePadding = document.createElement('div');
+    rowFramePadding.className = 'styleGrid__row';
+    rowFramePadding.append(name('Padding'), framePadding, document.createElement('div'), document.createElement('div'));
+    sectionBorder.append(sectionBorderTitle, rowFrameBorder, rowFrameRadiusTop, rowFrameRadiusBottom, rowFramePadding);
     
     // Section: Fond
     const sectionBg = document.createElement('div');

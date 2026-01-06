@@ -18,7 +18,10 @@ export function buildInterfaceUrl(baseUrl, cfg) {
     if (cfg.frameBgColor) u.searchParams.set('frameBgColor', cfg.frameBgColor);
     if (cfg.frameBorderWidth) u.searchParams.set('frameBorderWidth', String(cfg.frameBorderWidth));
     if (cfg.frameBorderColor) u.searchParams.set('frameBorderColor', cfg.frameBorderColor);
-    if (cfg.frameBorderRadius) u.searchParams.set('frameBorderRadius', String(cfg.frameBorderRadius));
+    if (cfg.frameBorderRadiusTopLeft) u.searchParams.set('frameBorderRadiusTopLeft', String(cfg.frameBorderRadiusTopLeft));
+    if (cfg.frameBorderRadiusTopRight) u.searchParams.set('frameBorderRadiusTopRight', String(cfg.frameBorderRadiusTopRight));
+    if (cfg.frameBorderRadiusBottomRight) u.searchParams.set('frameBorderRadiusBottomRight', String(cfg.frameBorderRadiusBottomRight));
+    if (cfg.frameBorderRadiusBottomLeft) u.searchParams.set('frameBorderRadiusBottomLeft', String(cfg.frameBorderRadiusBottomLeft));
     if (cfg.framePadding) u.searchParams.set('framePadding', String(cfg.framePadding));
     if (cfg.frameShadowBlur > 0) {
       u.searchParams.set('frameShadowBlur', String(cfg.frameShadowBlur));
