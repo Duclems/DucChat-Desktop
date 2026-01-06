@@ -34,6 +34,9 @@ export function mountApp() {
   const frameShadowBlurParam = Number(params.get('frameShadowBlur'));
   const frameShadowColorParam = params.get('frameShadowColor');
   const frameShadowOpacityParam = Number(params.get('frameShadowOpacity'));
+  const frameOuterShadowBlurParam = Number(params.get('frameOuterShadowBlur'));
+  const frameOuterShadowColorParam = params.get('frameOuterShadowColor');
+  const frameOuterShadowOpacityParam = Number(params.get('frameOuterShadowOpacity'));
   const frameTextColorParam = params.get('frameTextColor');
   const frameTextFontParam = params.get('frameTextFont');
   const frameTextBoldParam = params.get('frameTextBold');
@@ -86,6 +89,9 @@ export function mountApp() {
   const frameShadowBlur = Number.isFinite(frameShadowBlurParam) && frameShadowBlurParam >= 0 && frameShadowBlurParam <= 50 ? Math.floor(frameShadowBlurParam) : 0;
   const frameShadowColor = frameShadowColorParam && /^#[0-9A-Fa-f]{6}$/.test(frameShadowColorParam) ? frameShadowColorParam : '#000000';
   const frameShadowOpacity = Number.isFinite(frameShadowOpacityParam) && frameShadowOpacityParam >= 0 && frameShadowOpacityParam <= 100 ? frameShadowOpacityParam : 100;
+  const frameOuterShadowBlur = Number.isFinite(frameOuterShadowBlurParam) && frameOuterShadowBlurParam >= 0 && frameOuterShadowBlurParam <= 50 ? Math.floor(frameOuterShadowBlurParam) : 0;
+  const frameOuterShadowColor = frameOuterShadowColorParam && /^#[0-9A-Fa-f]{6}$/.test(frameOuterShadowColorParam) ? frameOuterShadowColorParam : '#000000';
+  const frameOuterShadowOpacity = Number.isFinite(frameOuterShadowOpacityParam) && frameOuterShadowOpacityParam >= 0 && frameOuterShadowOpacityParam <= 100 ? frameOuterShadowOpacityParam : 100;
   const frameTextColor = frameTextColorParam && /^#[0-9A-Fa-f]{6}$/.test(frameTextColorParam) ? frameTextColorParam : '#ffffff';
   const frameTextFont = frameTextFontParam || '';
   const frameTextBold = frameTextBoldParam === '1' || frameTextBoldParam === 'true';
@@ -130,6 +136,19 @@ export function mountApp() {
       document.documentElement.style.removeProperty('--frame-border-radius');
     }
     document.documentElement.style.setProperty('--frame-padding', `${framePadding}em`);
+    // Build box-shadow value combining inner and outer shadows
+    // Outer shadow first, then inner shadow (order matters for visibility)
+    const shadows = [];
+    if (frameOuterShadowBlur > 0) {
+      const outerOpacity = frameOuterShadowOpacity / 100;
+      // Convert hex to rgba
+      const hex = frameOuterShadowColor.replace('#', '');
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      const rgbaColor = `rgba(${r}, ${g}, ${b}, ${outerOpacity})`;
+      shadows.push(`0 2px ${frameOuterShadowBlur}px ${rgbaColor}`);
+    }
     if (frameShadowBlur > 0) {
       const opacity = frameShadowOpacity / 100;
       // Convert hex to rgba
@@ -138,7 +157,12 @@ export function mountApp() {
       const g = parseInt(hex.substring(2, 4), 16);
       const b = parseInt(hex.substring(4, 6), 16);
       const rgbaColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
-      document.documentElement.style.setProperty('--frame-shadow', `inset 0 0 ${frameShadowBlur}px ${rgbaColor}`);
+      shadows.push(`inset 0 0 ${frameShadowBlur}px ${rgbaColor}`);
+    }
+    if (shadows.length > 0) {
+      document.documentElement.style.setProperty('--frame-box-shadow', shadows.join(', '));
+    } else {
+      document.documentElement.style.removeProperty('--frame-box-shadow');
     }
     document.documentElement.style.setProperty('--frame-text-color', frameTextColor);
     document.documentElement.style.setProperty('--frame-text-weight', frameTextBold ? 'bold' : 'normal');

@@ -621,6 +621,11 @@ export function HomePage() {
     const frameShadowColor = colorInput('#000000');
     const frameShadowOpacity = numInput('100', 0, 100);
     frameShadowOpacity.step = '1';
+    const frameOuterShadowBlur = numInput('0', 0, 50);
+    frameOuterShadowBlur.step = '1';
+    const frameOuterShadowColor = colorInput('#000000');
+    const frameOuterShadowOpacity = numInput('100', 0, 100);
+    frameOuterShadowOpacity.step = '1';
     const frameTextColor = colorInput('#ffffff');
     const frameTextFont = fontSelect('');
     const frameTextBold = check('Gras');
@@ -704,6 +709,9 @@ export function HomePage() {
       if (typeof saved.frameShadowBlur === 'number') frameShadowBlur.value = String(saved.frameShadowBlur);
       if (typeof saved.frameShadowColor === 'string') frameShadowColor.value = saved.frameShadowColor;
       if (typeof saved.frameShadowOpacity === 'number') frameShadowOpacity.value = String(saved.frameShadowOpacity);
+      if (typeof saved.frameOuterShadowBlur === 'number') frameOuterShadowBlur.value = String(saved.frameOuterShadowBlur);
+      if (typeof saved.frameOuterShadowColor === 'string') frameOuterShadowColor.value = saved.frameOuterShadowColor;
+      if (typeof saved.frameOuterShadowOpacity === 'number') frameOuterShadowOpacity.value = String(saved.frameOuterShadowOpacity);
       if (typeof saved.frameTextColor === 'string') frameTextColor.value = saved.frameTextColor;
       if (typeof saved.frameTextFont === 'string') frameTextFont.setValue(saved.frameTextFont);
       if (typeof saved.frameTextBold === 'boolean') frameTextBold.input.checked = saved.frameTextBold;
@@ -812,6 +820,9 @@ export function HomePage() {
         frameShadowBlur: Number(frameShadowBlur.value) || 0,
         frameShadowColor: frameShadowColor.value || '#000000',
         frameShadowOpacity: Number(frameShadowOpacity.value) || 100,
+        frameOuterShadowBlur: Number(frameOuterShadowBlur.value) || 0,
+        frameOuterShadowColor: frameOuterShadowColor.value || '#000000',
+        frameOuterShadowOpacity: Number(frameOuterShadowOpacity.value) || 100,
         frameTextColor: frameTextColor.value || '#ffffff',
         frameTextFont: frameTextFont.getValue() || '',
         frameTextBold: !!frameTextBold.input.checked,
@@ -880,6 +891,20 @@ export function HomePage() {
           document.documentElement.style.removeProperty('--frame-border-radius');
         }
         document.documentElement.style.setProperty('--frame-padding', `${cfg.framePadding}em`);
+        // Build box-shadow value combining inner and outer shadows
+        // Outer shadow first, then inner shadow (order matters for visibility)
+        const shadows = [];
+        if (cfg.frameOuterShadowBlur > 0) {
+          const outerShadowColor = cfg.frameOuterShadowColor || '#000000';
+          const outerOpacity = (cfg.frameOuterShadowOpacity !== undefined ? cfg.frameOuterShadowOpacity : 100) / 100;
+          // Convert hex to rgba
+          const hex = outerShadowColor.replace('#', '');
+          const r = parseInt(hex.substring(0, 2), 16);
+          const g = parseInt(hex.substring(2, 4), 16);
+          const b = parseInt(hex.substring(4, 6), 16);
+          const rgbaColor = `rgba(${r}, ${g}, ${b}, ${outerOpacity})`;
+          shadows.push(`0 2px ${cfg.frameOuterShadowBlur}px ${rgbaColor}`);
+        }
         if (cfg.frameShadowBlur > 0) {
           const shadowColor = cfg.frameShadowColor || '#000000';
           const opacity = (cfg.frameShadowOpacity !== undefined ? cfg.frameShadowOpacity : 100) / 100;
@@ -889,9 +914,12 @@ export function HomePage() {
           const g = parseInt(hex.substring(2, 4), 16);
           const b = parseInt(hex.substring(4, 6), 16);
           const rgbaColor = `rgba(${r}, ${g}, ${b}, ${opacity})`;
-          document.documentElement.style.setProperty('--frame-shadow', `inset 0 0 ${cfg.frameShadowBlur}px ${rgbaColor}`);
+          shadows.push(`inset 0 0 ${cfg.frameShadowBlur}px ${rgbaColor}`);
+        }
+        if (shadows.length > 0) {
+          document.documentElement.style.setProperty('--frame-box-shadow', shadows.join(', '));
         } else {
-          document.documentElement.style.removeProperty('--frame-shadow');
+          document.documentElement.style.removeProperty('--frame-box-shadow');
         }
         document.documentElement.style.setProperty('--frame-text-color', cfg.frameTextColor);
         document.documentElement.style.setProperty('--frame-text-weight', cfg.frameTextBold ? 'bold' : 'normal');
@@ -948,7 +976,8 @@ export function HomePage() {
         document.documentElement.style.removeProperty('--frame-padding');
         document.documentElement.style.removeProperty('--frame-border-color');
         document.documentElement.style.removeProperty('--frame-border-radius');
-        document.documentElement.style.removeProperty('--frame-shadow');
+        document.documentElement.style.removeProperty('--frame-box-shadow');
+        document.documentElement.style.removeProperty('--frame-box-shadow');
         document.documentElement.style.removeProperty('--frame-text-color');
         document.documentElement.style.removeProperty('--frame-text-weight');
         document.documentElement.style.removeProperty('--frame-text-style');
@@ -1018,6 +1047,9 @@ export function HomePage() {
         frameShadowBlur: cfg.frameShadowBlur,
         frameShadowColor: cfg.frameShadowColor,
         frameShadowOpacity: cfg.frameShadowOpacity,
+        frameOuterShadowBlur: cfg.frameOuterShadowBlur,
+        frameOuterShadowColor: cfg.frameOuterShadowColor,
+        frameOuterShadowOpacity: cfg.frameOuterShadowOpacity,
         frameTextColor: cfg.frameTextColor,
         frameTextBold: cfg.frameTextBold,
         frameTextItalic: cfg.frameTextItalic,
@@ -1071,6 +1103,9 @@ export function HomePage() {
       frameShadowBlur,
       frameShadowColor,
       frameShadowOpacity,
+      frameOuterShadowBlur,
+      frameOuterShadowColor,
+      frameOuterShadowOpacity,
       frameTextColor,
       frameTextFont.select,
       frameTextFont.customInput,
@@ -1236,7 +1271,13 @@ export function HomePage() {
     const rowFrameShadowOpacity = document.createElement('div');
     rowFrameShadowOpacity.className = 'styleGrid__row';
     rowFrameShadowOpacity.append(name('Opacité (%)'), frameShadowOpacity, document.createElement('div'), document.createElement('div'));
-    sectionShadow.append(sectionShadowTitle, rowFrameShadow, rowFrameShadowOpacity);
+    const rowFrameOuterShadow = document.createElement('div');
+    rowFrameOuterShadow.className = 'styleGrid__row';
+    rowFrameOuterShadow.append(name('Blur extérieur'), frameOuterShadowBlur, name('Couleur extérieure'), frameOuterShadowColor);
+    const rowFrameOuterShadowOpacity = document.createElement('div');
+    rowFrameOuterShadowOpacity.className = 'styleGrid__row';
+    rowFrameOuterShadowOpacity.append(name('Opacité extérieure (%)'), frameOuterShadowOpacity, document.createElement('div'), document.createElement('div'));
+    sectionShadow.append(sectionShadowTitle, rowFrameShadow, rowFrameShadowOpacity, rowFrameOuterShadow, rowFrameOuterShadowOpacity);
     
     // Section: Texte
     const sectionText = document.createElement('div');

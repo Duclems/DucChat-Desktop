@@ -655,7 +655,7 @@ body.hasFrameRed .chatMsg {
   padding: var(--frame-padding, 0.3em);
   margin: 0.2em 0;
   background: var(--frame-bg-color, transparent);
-  box-shadow: var(--frame-shadow, none);
+  box-shadow: var(--frame-box-shadow, none);
 }
 
 .chatMsg__user {

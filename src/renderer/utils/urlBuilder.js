@@ -28,6 +28,11 @@ export function buildInterfaceUrl(baseUrl, cfg) {
       if (cfg.frameShadowColor) u.searchParams.set('frameShadowColor', cfg.frameShadowColor);
       if (cfg.frameShadowOpacity !== undefined) u.searchParams.set('frameShadowOpacity', String(cfg.frameShadowOpacity));
     }
+    if (cfg.frameOuterShadowBlur > 0) {
+      u.searchParams.set('frameOuterShadowBlur', String(cfg.frameOuterShadowBlur));
+      if (cfg.frameOuterShadowColor) u.searchParams.set('frameOuterShadowColor', cfg.frameOuterShadowColor);
+      if (cfg.frameOuterShadowOpacity !== undefined) u.searchParams.set('frameOuterShadowOpacity', String(cfg.frameOuterShadowOpacity));
+    }
     if (cfg.frameTextColor) u.searchParams.set('frameTextColor', cfg.frameTextColor);
     if (cfg.frameTextFont) u.searchParams.set('frameTextFont', cfg.frameTextFont);
     if (cfg.frameTextBold) u.searchParams.set('frameTextBold', '1');
