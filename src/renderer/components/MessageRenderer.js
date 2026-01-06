@@ -1,10 +1,10 @@
-import { normUserKey } from '../utils/messageUtils';
+import { normUserKey, fallbackUserColor } from '../utils/messageUtils';
 import { getInterfaceConfig } from '../utils/styleUtils';
 
 /**
  * Renders a single chat message
  */
-export function renderMessage(m, pseudosCfg) {
+export function renderMessage(m, pseudosCfg, userColorCache) {
   const origUser = String(m.user || 'unknown');
   const userKey = normUserKey(origUser);
   let displayUser = pseudosCfg.renames?.[userKey] || origUser;
@@ -22,19 +22,19 @@ export function renderMessage(m, pseudosCfg) {
 
   const user = document.createElement('span');
   user.className = 'chatMsg__user';
-  user.textContent = `${displayUser}:`;
+  user.textContent = `${displayUser} :`;
   const { userColors, userColor: customUserColor } = getInterfaceConfig();
   if (userColors) {
     const c = String(m.userColor || '').trim();
     if (c) {
       // Use Twitch color if available
       row.style.setProperty('--user-color', c);
-    } else if (customUserColor) {
-      // Use custom color if set
-      row.style.setProperty('--user-color', customUserColor);
     } else {
-      // Use default title color
-      row.style.removeProperty('--user-color');
+      // No Twitch color defined, use random color based on username
+      const randomColor = userColorCache 
+        ? fallbackUserColor(origUser, userColorCache)
+        : fallbackUserColor(origUser, new Map());
+      row.style.setProperty('--user-color', randomColor);
     }
   } else {
     // If userColors is disabled, use custom color or default

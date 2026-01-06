@@ -260,7 +260,7 @@ export function HomePage() {
     const { limit, msgTimeout } = getInterfaceConfig();
     messages.push(m);
     if (messages.length > limit) messages.shift();
-    const row = renderMessage(m, pseudosCfg);
+    const row = renderMessage(m, pseudosCfg, userColorCache);
     
     log.append(row);
     if (log.childNodes.length > limit) log.removeChild(log.firstChild);
