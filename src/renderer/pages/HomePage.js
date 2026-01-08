@@ -234,19 +234,31 @@ export function HomePage() {
     if (msgTimeout !== null && msgTimeout > 0) {
       const timeoutId = setTimeout(() => {
         if (row.parentNode === log) {
-          row.remove();
-          // Try to find and remove from messages array if messageObj provided
-          if (messageObj) {
-            const idx = messages.indexOf(messageObj);
-            if (idx >= 0) messages.splice(idx, 1);
-          } else {
-            // If no messageObj, try to find by dataset
-            const userKey = row.dataset?.userkey;
-            if (userKey) {
-              const idx = messages.findIndex(m => normUserKey(m?.user) === userKey);
-              if (idx >= 0) messages.splice(idx, 1);
+          // Get animation duration for fade out
+          const { animationDuration } = getInterfaceConfig();
+          const durationMs = animationDuration * 1000;
+          
+          // Trigger fade out animation
+          row.dataset.animatingOut = 'true';
+          
+          // Remove after animation completes
+          setTimeout(() => {
+            if (row.parentNode === log) {
+              row.remove();
+              // Try to find and remove from messages array if messageObj provided
+              if (messageObj) {
+                const idx = messages.indexOf(messageObj);
+                if (idx >= 0) messages.splice(idx, 1);
+              } else {
+                // If no messageObj, try to find by dataset
+                const userKey = row.dataset?.userkey;
+                if (userKey) {
+                  const idx = messages.findIndex(m => normUserKey(m?.user) === userKey);
+                  if (idx >= 0) messages.splice(idx, 1);
+                }
+              }
             }
-          }
+          }, durationMs);
         }
       }, msgTimeout * 1000);
       row.dataset.timeoutId = String(timeoutId);
@@ -257,13 +269,52 @@ export function HomePage() {
     const userKey = normUserKey(m?.user);
     if (userKey && blockedSet.has(userKey)) return;
 
-    const { limit, msgTimeout } = getInterfaceConfig();
+    const { limit, msgTimeout, animationDuration } = getInterfaceConfig();
     messages.push(m);
     if (messages.length > limit) messages.shift();
     const row = renderMessage(m, pseudosCfg, userColorCache);
     
+    // Apply animation CSS variables directly to the message element BEFORE adding to DOM
+    // This ensures the duration is set before the animation starts
+    row.style.setProperty('--msg-animation-duration', `${animationDuration}s`);
+    row.style.setProperty('--msg-animation-easing', 'ease-out');
+    
+    // Add to DOM
     log.append(row);
-    if (log.childNodes.length > limit) log.removeChild(log.firstChild);
+    
+    // Remove oldest message with fade out animation if limit exceeded
+    if (log.childNodes.length > limit) {
+      const oldestRow = log.firstChild;
+      if (oldestRow && oldestRow.nodeType === Node.ELEMENT_NODE) {
+        const durationMs = animationDuration * 1000;
+        oldestRow.dataset.animatingOut = 'true';
+        setTimeout(() => {
+          if (oldestRow.parentNode === log) {
+            oldestRow.remove();
+          }
+        }, durationMs);
+      } else {
+        log.removeChild(log.firstChild);
+      }
+    }
+    
+    // Force animation to trigger by using requestAnimationFrame
+    // This ensures CSS animations start when the element is added to the DOM
+    // Make sure variables are set before triggering animation
+    if (row.dataset.animation) {
+      const animType = row.dataset.animation;
+      // Force a reflow to ensure styles are applied
+      void row.offsetHeight;
+      // Remove and re-add the animation attribute to trigger the animation
+      row.removeAttribute('data-animation');
+      requestAnimationFrame(() => {
+        // Re-apply variables in case they were lost
+        row.style.setProperty('--msg-animation-duration', `${animationDuration}s`);
+        row.style.setProperty('--msg-animation-easing', 'ease-out');
+        row.setAttribute('data-animation', animType);
+      });
+    }
+    
     log.scrollTop = log.scrollHeight;
     
     // Apply timeout
@@ -271,9 +322,26 @@ export function HomePage() {
   }
 
   function enforceLimitNow() {
-    const { limit } = getInterfaceConfig();
+    const { limit, animationDuration } = getInterfaceConfig();
     while (messages.length > limit) messages.shift();
-    while (log.childNodes.length > limit) log.removeChild(log.firstChild);
+    
+    // Remove excess messages with fade out animation
+    const durationMs = animationDuration * 1000;
+    
+    while (log.childNodes.length > limit) {
+      const oldestRow = log.firstChild;
+      if (oldestRow && oldestRow.nodeType === Node.ELEMENT_NODE) {
+        oldestRow.dataset.animatingOut = 'true';
+        setTimeout(() => {
+          if (oldestRow.parentNode === log) {
+            oldestRow.remove();
+          }
+        }, durationMs);
+      } else {
+        log.removeChild(log.firstChild);
+      }
+    }
+    
     log.scrollTop = log.scrollHeight;
   }
 
@@ -378,6 +446,7 @@ export function HomePage() {
       { value: 'emotes', label: 'Emotes' },
       { value: 'visual', label: 'Style visuel' },
       { value: 'layout', label: 'Position' },
+      { value: 'animation', label: 'Animation' },
     ];
     categories.forEach((cat) => {
       const option = document.createElement('option');
@@ -627,6 +696,31 @@ export function HomePage() {
     const frameOuterShadowOpacity = numInput('100', 0, 100);
     frameOuterShadowOpacity.step = '1';
     const frameTextColor = colorInput('#ffffff');
+    // Animation controls
+    const animationType = document.createElement('select');
+    animationType.className = 'textInput';
+    const animationTypes = [
+      { value: 'none', label: 'Aucune' },
+      { value: 'fade', label: 'Fondu' },
+      { value: 'slide', label: 'Glissement' },
+      { value: 'slide-up', label: 'Glissement (haut)' },
+      { value: 'slide-down', label: 'Glissement (bas)' },
+      { value: 'slide-left', label: 'Glissement (gauche)' },
+      { value: 'slide-right', label: 'Glissement (droite)' },
+      { value: 'scale', label: 'Agrandissement' },
+      { value: 'bounce', label: 'Rebond' },
+      { value: 'rotate', label: 'Rotation' },
+      { value: 'flip', label: 'Retournement' },
+    ];
+    animationTypes.forEach((type) => {
+      const option = document.createElement('option');
+      option.value = type.value;
+      option.textContent = type.label;
+      animationType.append(option);
+    });
+    animationType.value = 'none';
+    const animationDuration = numInput('0.3', 0, 5);
+    animationDuration.step = '0.1';
     const frameTextFont = fontSelect('');
     const frameTextBold = check('Gras');
     const frameTextItalic = check('Italique');
@@ -728,9 +822,11 @@ export function HomePage() {
       if (typeof saved.mentionItalic === 'boolean') mentionItalic.input.checked = saved.mentionItalic;
       if (typeof saved.mentionUnderline === 'boolean') mentionUnderline.input.checked = saved.mentionUnderline;
       if (typeof saved.mentionUppercase === 'boolean') mentionUppercase.input.checked = saved.mentionUppercase;
-      if (typeof saved.msgWidthType === 'string') msgWidthType.value = saved.msgWidthType;
-      if (typeof saved.msgWidthValue === 'number') msgWidthValue.value = String(saved.msgWidthValue);
-      if (typeof saved.msgAlign === 'string') msgAlign.value = saved.msgAlign;
+        if (typeof saved.msgWidthType === 'string') msgWidthType.value = saved.msgWidthType;
+        if (typeof saved.msgWidthValue === 'number') msgWidthValue.value = String(saved.msgWidthValue);
+        if (typeof saved.msgAlign === 'string') msgAlign.value = saved.msgAlign;
+        if (typeof saved.animationType === 'string') animationType.value = saved.animationType;
+        if (typeof saved.animationDuration === 'number') animationDuration.value = String(saved.animationDuration);
       // Show/hide width value input based on saved width type
       msgWidthValue.style.display = msgWidthType.value === 'fixed' ? 'block' : 'none';
       if (typeof saved.userTextBold === 'boolean') userTextBold.input.checked = saved.userTextBold;
@@ -745,6 +841,11 @@ export function HomePage() {
     document.documentElement.style.setProperty('--mention-style', mentionItalic.input.checked ? 'italic' : 'normal');
     document.documentElement.style.setProperty('--mention-decoration', mentionUnderline.input.checked ? 'underline' : 'none');
     document.documentElement.style.setProperty('--mention-transform', mentionUppercase.input.checked ? 'uppercase' : 'none');
+    
+    // Apply initial animation styles
+    const initialAnimationDuration = Number(animationDuration.value) || 0.3;
+    document.documentElement.style.setProperty('--msg-animation-duration', `${initialAnimationDuration}s`);
+    document.documentElement.style.setProperty('--msg-animation-easing', 'ease-out');
 
     const urlRow = document.createElement('div');
     urlRow.className = 'urlRow urlRow--wide';
@@ -793,6 +894,17 @@ export function HomePage() {
       );
 
       exampleLog.append(row1, row2);
+      
+      // Force animations to trigger for example messages
+      [row1, row2].forEach((row) => {
+        if (row.dataset.animation) {
+          const animType = row.dataset.animation;
+          row.removeAttribute('data-animation');
+          requestAnimationFrame(() => {
+            row.setAttribute('data-animation', animType);
+          });
+        }
+      });
 
       // Stacked mode is now handled purely by CSS, no JS needed
     }
@@ -846,6 +958,8 @@ export function HomePage() {
         msgWidthType: msgWidthType.value || 'auto',
         msgWidthValue: Number(msgWidthValue.value) || 300,
         msgAlign: msgAlign.value || 'left',
+        animationType: animationType.value || 'none',
+        animationDuration: Number(animationDuration.value) || 0.3,
       };
 
       // Apply preview + hook runtime config
@@ -860,6 +974,8 @@ export function HomePage() {
           cfg.roundEmotes && cfg.emoteRadius >= 0 && cfg.emoteRadius <= 50 ? Math.floor(cfg.emoteRadius) : 0,
         stacked: cfg.stacked,
         msgTimeout: Number.isFinite(cfg.msgTimeout) && cfg.msgTimeout >= 0 && cfg.msgTimeout <= 300 ? cfg.msgTimeout : null,
+        animationType: cfg.animationType || 'none',
+        animationDuration: cfg.animationDuration || 0.3,
       };
       // Apply limit immediately (no need to wait for a new message)
       enforceLimitNow();
@@ -979,6 +1095,21 @@ export function HomePage() {
       }
       document.documentElement.style.setProperty('--msg-align', cfg.msgAlign || 'left');
       
+      // Apply animation styles
+      document.documentElement.style.setProperty('--msg-animation-duration', `${cfg.animationDuration}s`);
+      document.documentElement.style.setProperty('--msg-animation-easing', 'ease-out');
+      if (cfg.animationType && cfg.animationType !== 'none') {
+        // Apply animation to all existing messages
+        Array.from(log.querySelectorAll('.chatMsg')).forEach((msg) => {
+          msg.dataset.animation = cfg.animationType;
+        });
+      } else {
+        // Remove animation from all existing messages
+        Array.from(log.querySelectorAll('.chatMsg')).forEach((msg) => {
+          msg.removeAttribute('data-animation');
+        });
+      }
+      
       if (!cfg.frameRed) {
         document.body.classList.remove('hasFrameRed');
         document.documentElement.style.removeProperty('--frame-bg-color');
@@ -1083,6 +1214,8 @@ export function HomePage() {
         msgWidthType: cfg.msgWidthType,
         msgWidthValue: cfg.msgWidthValue,
         msgAlign: cfg.msgAlign,
+        animationType: cfg.animationType,
+        animationDuration: cfg.animationDuration,
       });
 
       const baseUrl = await getBaseUrl();
@@ -1097,6 +1230,8 @@ export function HomePage() {
       limit,
       msgPad,
       msgTimeout,
+      animationType,
+      animationDuration,
       emoteRadius,
       userColors.input,
       roundEmotes.input,
@@ -1166,6 +1301,7 @@ export function HomePage() {
       emotes: document.createElement('div'),
       visual: document.createElement('div'),
       layout: document.createElement('div'),
+      animation: document.createElement('div'),
     };
 
     // Display category: Font, Limit, Pad
@@ -1371,6 +1507,21 @@ export function HomePage() {
     
     categoryContainers.visual.append(checksVisual, visualSectionSelect, visualSectionsContainer);
 
+    // Animation category
+    const sectionAnimation = document.createElement('div');
+    sectionAnimation.className = 'styleSection';
+    const sectionAnimationTitle = document.createElement('div');
+    sectionAnimationTitle.className = 'styleSection__title';
+    sectionAnimationTitle.textContent = 'Animation d\'apparition';
+    const rowAnimationType = document.createElement('div');
+    rowAnimationType.className = 'styleGrid__row';
+    rowAnimationType.append(name('Type'), animationType, document.createElement('div'), document.createElement('div'));
+    const rowAnimationDuration = document.createElement('div');
+    rowAnimationDuration.className = 'styleGrid__row';
+    rowAnimationDuration.append(name('Durée (s)'), animationDuration, document.createElement('div'), document.createElement('div'));
+    sectionAnimation.append(sectionAnimationTitle, rowAnimationType, rowAnimationDuration);
+    categoryContainers.animation.append(sectionAnimation);
+
     // Show/hide categories based on selection
     function showCategory(categoryValue) {
       Object.entries(categoryContainers).forEach(([key, container]) => {
@@ -1421,7 +1572,7 @@ export function HomePage() {
       tabExample.classList.add('chatTabs__tab--active');
       tabLive.classList.remove('chatTabs__tab--active');
       log.style.display = 'none';
-      exampleWrap.style.display = 'block';
+      exampleWrap.style.display = 'flex';
     });
     
     tabsContainer.append(tabLive, tabExample);

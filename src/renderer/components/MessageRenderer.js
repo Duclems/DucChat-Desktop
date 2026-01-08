@@ -19,6 +19,12 @@ export function renderMessage(m, pseudosCfg, userColorCache) {
   row.className = 'chatMsg';
   row.dataset.userkey = userKey;
   row.dataset.origuser = origUser;
+  
+  // Apply animation if configured
+  const { animationType } = getInterfaceConfig();
+  if (animationType && animationType !== 'none') {
+    row.dataset.animation = animationType;
+  }
 
   const user = document.createElement('span');
   user.className = 'chatMsg__user';

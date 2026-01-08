@@ -56,6 +56,10 @@ export function buildInterfaceUrl(baseUrl, cfg) {
     if (cfg.msgWidthType) u.searchParams.set('msgWidthType', cfg.msgWidthType);
     if (cfg.msgWidthType === 'fixed' && cfg.msgWidthValue) u.searchParams.set('msgWidthValue', String(cfg.msgWidthValue));
     if (cfg.msgAlign) u.searchParams.set('msgAlign', cfg.msgAlign);
+    if (cfg.animationType && cfg.animationType !== 'none') {
+      u.searchParams.set('animationType', cfg.animationType);
+      if (cfg.animationDuration) u.searchParams.set('animationDuration', String(cfg.animationDuration));
+    }
   }
   u.hash = '#/';
   return u.toString();

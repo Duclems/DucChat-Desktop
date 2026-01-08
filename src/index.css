@@ -185,10 +185,24 @@ body.isOverlay {
 
 .chatTabs__content {
   margin-top: var(--space-13);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .examplePreview {
   display: none;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.examplePreview[style*="display: block"],
+.examplePreview[style*="display:flex"] {
+  display: flex !important;
 }
 
 .examplePreview__label {
@@ -203,7 +217,14 @@ body.isOverlay {
   border-radius: var(--radius-13);
   padding: var(--space-13);
   background: rgba(0, 0, 0, 0.12);
-  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: visible;
+  display: flex;
+  flex-direction: column;
+  gap: var(--msg-pad, 0.2em);
+  align-items: var(--msg-align, flex-start);
 }
 
 .chatLog--compact .chatEmote {
@@ -435,6 +456,9 @@ body.isOverlay {
   padding: var(--space-21);
   overflow-y: auto;
   overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 body.isOverlay .appMain {
@@ -459,6 +483,10 @@ body.isOverlay .card {
   border-radius: var(--radius-13);
   padding: var(--space-21);
   box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
 }
 
 .card h2 {
@@ -542,8 +570,9 @@ body.isOverlay .card {
 }
 
 .chatLog {
-  margin-top: var(--space-13);
-  height: 260px;
+  margin-top: 0;
+  flex: 1;
+  min-height: 0;
   overflow-x: visible;
   overflow-y: auto;
   border: 1px solid var(--border);
@@ -647,9 +676,117 @@ body.isOverlay.isCompact .chatEmote {
   gap: 0.3em;
   line-height: 1.45;
   padding: 0; /* spacing handled by .chatLog gap */
-  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
   width: var(--msg-width, auto);
   max-width: 100%;
+}
+
+/* Animation: Fade */
+.chatMsg[data-animation="fade"] {
+  animation: msgFade var(--msg-animation-duration) var(--msg-animation-easing);
+}
+
+@keyframes msgFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Animation: Slide */
+.chatMsg[data-animation="slide"] {
+  animation: msgSlide var(--msg-animation-duration) var(--msg-animation-easing);
+}
+
+.chatMsg[data-animation="slide-up"] {
+  animation: msgSlideUp var(--msg-animation-duration) var(--msg-animation-easing);
+}
+
+.chatMsg[data-animation="slide-down"] {
+  animation: msgSlideDown var(--msg-animation-duration) var(--msg-animation-easing);
+}
+
+.chatMsg[data-animation="slide-left"] {
+  animation: msgSlideLeft var(--msg-animation-duration) var(--msg-animation-easing);
+}
+
+.chatMsg[data-animation="slide-right"] {
+  animation: msgSlideRight var(--msg-animation-duration) var(--msg-animation-easing);
+}
+
+@keyframes msgSlide {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes msgSlideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes msgSlideDown {
+  from { transform: translateY(-30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes msgSlideLeft {
+  from { transform: translateX(30px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes msgSlideRight {
+  from { transform: translateX(-30px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Animation: Scale */
+.chatMsg[data-animation="scale"] {
+  animation: msgScale var(--msg-animation-duration) var(--msg-animation-easing);
+}
+
+@keyframes msgScale {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Animation: Bounce */
+.chatMsg[data-animation="bounce"] {
+  animation: msgBounce var(--msg-animation-duration) var(--msg-animation-easing);
+}
+
+@keyframes msgBounce {
+  0% { transform: translateY(0) scale(0.8); opacity: 0; }
+  50% { transform: translateY(-20px) scale(1.05); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* Animation: Rotate */
+.chatMsg[data-animation="rotate"] {
+  animation: msgRotate var(--msg-animation-duration) var(--msg-animation-easing);
+}
+
+@keyframes msgRotate {
+  from { transform: rotate(-10deg) scale(0.9); opacity: 0; }
+  to { transform: rotate(0deg) scale(1); opacity: 1; }
+}
+
+/* Animation: Flip */
+.chatMsg[data-animation="flip"] {
+  animation: msgFlip var(--msg-animation-duration) var(--msg-animation-easing);
+  transform-style: preserve-3d;
+}
+
+@keyframes msgFlip {
+  from { transform: rotateY(-90deg); opacity: 0; }
+  to { transform: rotateY(0deg); opacity: 1; }
+}
+
+/* Animation de disparition */
+.chatMsg[data-animating-out] {
+  animation: msgFadeOut var(--msg-animation-duration, 0.3s) var(--msg-animation-easing, ease-out) forwards;
+  pointer-events: none;
+}
+
+@keyframes msgFadeOut {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.95); }
 }
 
 body.hasFrameRed .chatMsg {

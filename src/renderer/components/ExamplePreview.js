@@ -32,9 +32,6 @@ export function createExamplePreview(onTestClick) {
   
   const exampleLog = document.createElement('div');
   exampleLog.className = 'chatLog examplePreview__log';
-  exampleLog.style.height = 'auto';
-  exampleLog.style.maxHeight = '120px';
-  exampleLog.style.marginTop = 'var(--space-8)';
   
   exampleWrap.append(exampleLabelRow, exampleLog);
   
@@ -45,7 +42,7 @@ export function createExamplePreview(onTestClick) {
  * Creates an example message row
  */
 export function createExampleRow(userName, textContent, emotes = [], userColorCache) {
-  const { userColors, userColor: customUserColor, userCapitalizeFirst, frameTextCapitalizeFirst } = getInterfaceConfig();
+  const { userColors, userColor: customUserColor, userCapitalizeFirst, frameTextCapitalizeFirst, animationType } = getInterfaceConfig();
   
   let displayName = userName;
   if (userCapitalizeFirst && displayName.length > 0) {
@@ -54,6 +51,11 @@ export function createExampleRow(userName, textContent, emotes = [], userColorCa
   
   const row = document.createElement('div');
   row.className = 'chatMsg';
+  
+  // Apply animation if configured
+  if (animationType && animationType !== 'none') {
+    row.dataset.animation = animationType;
+  }
 
   const user = document.createElement('span');
   user.className = 'chatMsg__user';

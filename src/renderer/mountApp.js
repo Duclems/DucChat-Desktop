@@ -60,6 +60,8 @@ export function mountApp() {
   const msgWidthTypeParam = params.get('msgWidthType');
   const msgWidthValueParam = Number(params.get('msgWidthValue'));
   const msgAlignParam = params.get('msgAlign');
+  const animationTypeParam = params.get('animationType');
+  const animationDurationParam = Number(params.get('animationDuration'));
 
   document.body.classList.toggle('isOverlay', isOverlay);
   document.body.classList.toggle('isCompact', isCompact);
@@ -225,9 +227,24 @@ export function mountApp() {
     document.documentElement.style.setProperty('--msg-width', 'auto');
   }
   document.documentElement.style.setProperty('--msg-align', msgAlign);
+  
+  // Apply animation styles
+  const animationType = animationTypeParam || 'none';
+  const animationDuration = Number.isFinite(animationDurationParam) && animationDurationParam > 0 ? animationDurationParam : 0.3;
+  
+  // Set CSS variables for animation duration and easing
+  document.documentElement.style.setProperty('--msg-animation-duration', `${animationDuration}s`);
+  document.documentElement.style.setProperty('--msg-animation-easing', 'ease-out');
+  
+  if (animationType && animationType !== 'none') {
+    // Apply animation to all existing messages
+    document.querySelectorAll('.chatMsg').forEach((msg) => {
+      msg.dataset.animation = animationType;
+    });
+  }
 
   // Expose a tiny runtime config for pages (optional)
-  window.__ducchatInterface = { fontSize, limit, showStreamer, userColors, emoteRadius, stacked, msgPad, msgTimeout, frameRed, frameBgColor, frameTextCapitalizeFirst };
+  window.__ducchatInterface = { fontSize, limit, showStreamer, userColors, emoteRadius, stacked, msgPad, msgTimeout, frameRed, frameBgColor, frameTextCapitalizeFirst, animationType, animationDuration };
 
   const outlet = document.createElement('div');
 

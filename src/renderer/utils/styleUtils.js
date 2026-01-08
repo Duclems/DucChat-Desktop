@@ -29,7 +29,9 @@ export function getInterfaceConfig() {
   const frameTextCapitalizeFirst = cfg.frameTextCapitalizeFirst === true;
   const stacked = cfg.stacked === true;
   const msgTimeout = Number.isFinite(cfg.msgTimeout) && cfg.msgTimeout >= 0 ? cfg.msgTimeout : null;
+  const animationType = cfg.animationType || 'none';
+  const animationDuration = Number.isFinite(cfg.animationDuration) && cfg.animationDuration > 0 ? cfg.animationDuration : 0.3;
   
-  return { limit, userColors, userColor, userCapitalizeFirst, frameTextCapitalizeFirst, stacked, msgTimeout };
+  return { limit, userColors, userColor, userCapitalizeFirst, frameTextCapitalizeFirst, stacked, msgTimeout, animationType, animationDuration };
 }
 
